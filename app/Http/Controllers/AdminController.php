@@ -10,7 +10,12 @@ class AdminController extends Controller
 {
     public function index()
     {
-        $users = User::where('is_admin', false)->with('phoneNumbers')->get();
+        $users = User::withTrashed()
+        ->where('is_admin', false)
+        ->with(['phoneNumbers' => function ($query) {
+            $query->withTrashed();
+        }])
+        ->get();
         return view('admin.dashboard', compact('users'));
     }
 
@@ -49,25 +54,46 @@ class AdminController extends Controller
     
             // Commit the transaction if everything is successful
             DB::commit();
-            return redirect()->route('admin.dashboard')->with('success', 'تم إنشاء المستخدم بنجاح.');
+            return redirect()->route('admin.dashboard')->with('success', 'User created successfully.');
     
         } catch (\Exception $e) {
             // Rollback the transaction if something goes wrong
             DB::rollBack();
 
-            return back()->withErrors(['registration' => 'حدث خطأ أثناء التسجيل. حاول مرة أخرى.']);
+            return back()->withErrors(['registration' => 'An error occurred while creating the user. Please try again.']);
         }
     }
 
     public function destroy(User $user)
     {
         if ($user->is_admin) {
-            return back()->withErrors(['error' => 'لا يمكن حذف مدير النظام.']);
+            return back()->withErrors(['error' => 'Cannot delete admin user.']);
         }
 
         $user->delete();
 
-        return redirect()->route('admin.dashboard')->with('success', 'تم حذف المستخدم بنجاح.');
+        return redirect()->route('admin.dashboard')->with('success', 'User deleted successfully.');
+    }
+
+    public function forceDelete(User $user)
+    {
+        if ($user->is_admin) {
+            return back()->withErrors(['error' => 'Cannot delete admin user.']);
+        }
+
+        $user->forceDelete();
+        return redirect()->route('admin.dashboard')->with('success', 'User permanently deleted.');
+    }
+
+    public function restore(User $user)
+    {
+        if ($user->is_admin) {
+            return back()->withErrors(['error' => 'Cannot restore admin user.']);
+        }
+
+        $user->restore();
+
+        return redirect()->route('admin.dashboard')->with('success', 'User restored successfully.');
     }
 
 }

@@ -8,5 +8,18 @@ use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
-    
+
+    public function showDashboard(){
+        return view('users.dashboard');
+    }
+
+
+    public function managePrices(){
+        return view('users.managePrices');
+    }
+
+    public function manageGenerators(){
+        return view('users.manageGenerators');
+    }
+
 }
