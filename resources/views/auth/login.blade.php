@@ -4,31 +4,52 @@
 
 @section('content')
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h4 class="mb-4 text-center">تسجيل الدخول</h4>
-
+    <div class="col-md-5">
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-white text-center border-0 rounded-top-4">
+                <h4 class="mb-0 fw-bold text-dark">تسجيل الدخول</h4>
+            </div>
+            <div class="card-body p-4">
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
 
                     <div class="mb-3">
-                        <label for="name" class="form-label"><bdi>اسم المستخدم</bdi></label>
-                        <input type="text" name="name" id="name" class="form-control" value="{{ old('name') }}" required autofocus>
+                        <label for="name" class="form-label fw-semibold"><bdi>اسم المستخدم</bdi></label>
+                        <input type="text" 
+                               name="name" 
+                               id="name" 
+                               class="form-control form-control-lg @error('name') is-invalid @enderror" 
+                               value="{{ old('name') }}" 
+                               required 
+                               autofocus
+                               placeholder="أدخل اسم المستخدم">
+                        @error('name')
+                            <div class="invalid-feedback text-end">{{ $message }}</div>
+                        @enderror
                     </div>
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label"><bdi>كلمة المرور</bdi></label>
-                        <input type="password" name="password" id="password" class="form-control" required>
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-semibold"><bdi>كلمة المرور</bdi></label>
+                        <input type="password" 
+                               name="password" 
+                               id="password" 
+                               class="form-control form-control-lg @error('password') is-invalid @enderror" 
+                               required
+                               placeholder="••••••••">
+                        @error('password')
+                            <div class="invalid-feedback text-end">{{ $message }}</div>
+                        @enderror
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100">دخول</button>
+                    <button type="submit" class="btn btn-dark btn-lg w-100 rounded-3">
+                        دخول
+                    </button>
                 </form>
 
                 @if ($errors->any())
-                    <div class="mt-3">
+                    <div class="mt-4">
                         @foreach ($errors->all() as $error)
-                            <div class="alert alert-danger text-center">{{ $error }}</div>
+                            <div class="alert alert-danger text-center small py-2 mb-2">{{ $error }}</div>
                         @endforeach
                     </div>
                 @endif
@@ -37,4 +58,3 @@
     </div>
 </div>
 @endsection
-

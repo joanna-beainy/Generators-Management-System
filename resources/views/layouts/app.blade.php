@@ -5,10 +5,17 @@
     <title>@yield('title')</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <style>
+        body {
+            padding-top: 70px; /* Prevent content overlap with fixed navbar */
+        }
+    </style>
 </head>
 <body class="bg-light">
 
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
         <div class="container">
             <div class="navbar-brand">
                 @auth
@@ -18,12 +25,11 @@
                 @endauth
             </div>
 
-
             <div class="ms-auto">
                 @auth
                     <form action="{{ route('logout') }}" method="POST" class="d-inline">
                         @csrf
-                        <button class="btn btn-outline-danger">خروج</button>
+                        <button class="btn btn-outline-danger"><i class="bi bi-box-arrow-right"></i> خروج</button>
                     </form>
                 @endauth
             </div>
@@ -33,6 +39,7 @@
     <main class="container">
         @yield('content')
     </main>
+
     @yield('scripts')
 </body>
 </html>

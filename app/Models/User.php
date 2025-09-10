@@ -41,27 +41,27 @@ class User extends Authenticatable
             if ($user->isForceDeleting()) {
                 // Force delete related entities
                 $user->phoneNumbers()->forceDelete();
-                // $user->customers()->forceDelete();
+                $user->customers()->forceDelete();
                 $user->kilowattPrice()->forceDelete();
-                // $user->meterCategories()->forceDelete();
-                // $user->generators()->forceDelete();
+                $user->meterCategories()->forceDelete();
+                $user->generators()->forceDelete();
             } else {
                 // Soft delete related entities
                 $user->phoneNumbers()->delete();
-                // $user->customers()->delete();
+                $user->customers()->delete();
                 $user->kilowattPrice()->delete();
-                // $user->meterCategories()->delete();
-                // $user->generators()->delete();
+                $user->meterCategories()->delete();
+                $user->generators()->delete();
             }
         });
 
         static::restoring(function ($user) {
             // Restore related entities
             $user->phoneNumbers()->withTrashed()->restore();
-            // $user->customers()->withTrashed()->restore();
+            $user->customers()->withTrashed()->restore();
             $user->kilowattPrice()->withTrashed()->restore();
-            // $user->meterCategories()->withTrashed()->restore();
-            // $user->generators()->withTrashed()->restore();
+            $user->meterCategories()->withTrashed()->restore();
+            $user->generators()->withTrashed()->restore();
         });
     }
 
@@ -88,6 +88,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function customers()
+    {
+        return $this->hasMany(Customer::class);
+    }
+
     public function phoneNumbers()
     {
         return $this->hasMany(UserPhoneNumber::class, 'user_id', 'id');
@@ -97,5 +102,16 @@ class User extends Authenticatable
     {
         return $this->hasOne(KilowattPrice::class);
     }
+
+    public function generators() 
+    {
+        return $this->hasMany(Generator::class);
+    }
+
+    public function meterCategories()
+    {
+        return $this->hasMany(MeterCategory::class);
+    }
+
 
 }
