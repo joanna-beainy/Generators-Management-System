@@ -21,7 +21,7 @@ class Generators extends Component
     public function loadGenerators()
     {
          $this->generators = Generator::where('user_id', Auth::id())
-        ->withCount('customers') 
+        ->withCount('clients') 
         ->get();
     }
 

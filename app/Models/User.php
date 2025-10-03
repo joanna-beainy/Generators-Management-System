@@ -3,12 +3,13 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Client;
+use App\Models\KilowattPrice;
+use App\Models\UserPhoneNumber;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use App\Models\UserPhoneNumber;
-use App\Models\KilowattPrice;
 
 class User extends Authenticatable
 {
@@ -41,14 +42,14 @@ class User extends Authenticatable
             if ($user->isForceDeleting()) {
                 // Force delete related entities
                 $user->phoneNumbers()->forceDelete();
-                $user->customers()->forceDelete();
+                $user->clients()->forceDelete();
                 $user->kilowattPrice()->forceDelete();
                 $user->meterCategories()->forceDelete();
                 $user->generators()->forceDelete();
             } else {
                 // Soft delete related entities
                 $user->phoneNumbers()->delete();
-                $user->customers()->delete();
+                $user->clients()->delete();
                 $user->kilowattPrice()->delete();
                 $user->meterCategories()->delete();
                 $user->generators()->delete();
@@ -58,7 +59,7 @@ class User extends Authenticatable
         static::restoring(function ($user) {
             // Restore related entities
             $user->phoneNumbers()->withTrashed()->restore();
-            $user->customers()->withTrashed()->restore();
+            $user->clients()->withTrashed()->restore();
             $user->kilowattPrice()->withTrashed()->restore();
             $user->meterCategories()->withTrashed()->restore();
             $user->generators()->withTrashed()->restore();
@@ -88,9 +89,9 @@ class User extends Authenticatable
         ];
     }
 
-    public function customers()
+    public function clients()
     {
-        return $this->hasMany(Customer::class);
+        return $this->hasMany(Client::class);
     }
 
     public function phoneNumbers()

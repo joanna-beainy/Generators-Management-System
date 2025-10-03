@@ -18,14 +18,11 @@
                         <input type="text" 
                                name="name" 
                                id="name" 
-                               class="form-control form-control-lg @error('name') is-invalid @enderror" 
+                               class="form-control form-control-lg" 
                                value="{{ old('name') }}" 
                                required 
                                autofocus
                                placeholder="أدخل اسم المستخدم">
-                        @error('name')
-                            <div class="invalid-feedback text-end">{{ $message }}</div>
-                        @enderror
                     </div>
 
                     <div class="mb-4">
@@ -33,12 +30,9 @@
                         <input type="password" 
                                name="password" 
                                id="password" 
-                               class="form-control form-control-lg @error('password') is-invalid @enderror" 
+                               class="form-control form-control-lg" 
                                required
                                placeholder="••••••••">
-                        @error('password')
-                            <div class="invalid-feedback text-end">{{ $message }}</div>
-                        @enderror
                     </div>
 
                     <button type="submit" class="btn btn-dark btn-lg w-100 rounded-3">

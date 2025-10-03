@@ -22,7 +22,7 @@ class GeneratorPolicy
      */
     public function delete(User $user, Generator $generator): bool
     {
-        return $generator->user_id === $user->id && $generator->customers()->count() === 0;
+        return $generator->user_id === $user->id && $generator->clients()->count() === 0;
     }
 
     public function restore(User $user, Generator $generator): bool
