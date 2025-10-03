@@ -1,5 +1,5 @@
 <div class="container" dir="rtl">
-    {{-- Flash Messages --}}
+    {{-- Flash Message --}}
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-3 text-center fw-semibold" role="alert">
             <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
@@ -13,34 +13,25 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="إغلاق"></button>
         </div>
     @endif
-
     {{-- Header --}}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="fw-bold text-dark mb-0">
-            <i class="bi bi-lightning-charge-fill text-warning me-2"></i> المولدات الخاصة بك
+            <i class="bi bi-archive text-secondary me-2"></i> العملاء المحذوفين
         </h3>
         <div class="d-flex gap-2">
-            <button type="button"
-                    class="btn btn-success shadow-sm px-4 rounded-pill"
-                    wire:click="toggleAddForm">
-                <i class="bi bi-plus-circle me-1"></i>إضافة مولد جديد
-            </button>
-
-            <a href="{{ route('users.dashboard') }}"
-               class="btn btn-outline-secondary shadow-sm px-4 rounded-pill">
+            <a href="{{ route('active.clients.index') }}" class="btn btn-outline-primary rounded-pill shadow-sm px-4">
+                <i class="bi bi-arrow-left"></i> المشتركين 
+            </a>
+            <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary rounded-pill shadow-sm px-4">
                 <i class="bi bi-x-circle me-1"></i> إغلاق
             </a>
         </div>
     </div>
 
-    {{-- Add Generator Form --}}
-    @include('livewire.partials.create-generator')
-
-
-    {{-- Generator Table --}}
-    @if($generators->isEmpty())
+    {{-- Clients Table --}}
+    @if($clients->isEmpty())
         <div class="alert alert-light border text-center shadow-sm rounded-3 py-3">
-            <i class="bi bi-info-circle me-2"></i> لا يوجد مولدات حتى الآن.
+            <i class="bi bi-info-circle me-2"></i> لا يوجد عملاء محذوفين
         </div>
     @else
         <div class="card shadow-sm border-0 rounded-4">
@@ -48,24 +39,27 @@
                 <table class="table table-hover align-middle mb-0 text-center">
                     <thead class="table-secondary">
                         <tr>
-                            <th>اسم المولد</th>
-                            <th>عدد المشتركين</th>
+                            <th>الاسم الكامل</th>
+                            <th>الهاتف</th>
+                            <th>العنوان</th>
+                            <th>المولد</th>
+                            <th>الفئة</th>
                             <th>الإجراءات</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($generators as $generator)
+                        @foreach($clients as $client)
                             <tr>
-                                <td class="fw-semibold">{{ $generator->name }}</td>
+                                <td>{{$client->fullName()}}</td>
+                                <td>{{ $client->phone_number ?? '_' }}</td>
+                                <td>{{ $client->address ?? '_' }}</td>
+                                <td>{{ $client->generator->name }}</td>
+                                <td>{{ $client->meterCategory->category }}</td>
                                 <td>
-                                    {{ $generator->customers_count > 0 ? $generator->customers_count : '_' }}
-                                </td>
-                                <td>
-                                    <button wire:click="deleteGenerator({{ $generator->id }})"
-                                            class="btn btn-outline-danger btn-sm rounded-pill shadow-sm"
-                                            title="حذف"
-                                            onclick="return confirm('هل أنت متأكد من حذف هذا المولد؟')">
-                                        <i class="bi bi-trash3"></i>
+                                    <button wire:click="restoreClient({{ $client->id }})"
+                                            class="btn btn-sm btn-outline-success rounded-pill px-3"
+                                            onclick="return confirm('هل أنت متأكد من استعادة هذا المشترك؟')">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
                                     </button>
                                 </td>
                             </tr>

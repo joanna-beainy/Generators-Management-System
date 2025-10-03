@@ -22,4 +22,12 @@ class UserController extends Controller
         return view('users.manageGenerators');
     }
 
+    public function activeClientsIndex(){
+        return view('users.ActiveClientsIndex');
+    }
+
+    public function trashedClientsIndex(){
+        return view('users.TrashedClientsIndex');
+    }
+
 }

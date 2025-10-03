@@ -45,7 +45,7 @@ class MeterCategoryPolicy
      */
     public function delete(User $user, MeterCategory $meterCategory): bool
     {
-        return $meterCategory->user_id === $user->id && $meterCategory->customers()->count() === 0;
+        return $meterCategory->user_id === $user->id && $meterCategory->clients()->count() === 0;
     }
 
     public function restore(User $user, MeterCategory $meterCategory): bool
