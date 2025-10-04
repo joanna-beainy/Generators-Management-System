@@ -36,7 +36,7 @@ class MeterReadings extends Component
             ? Carbon::now()->subMonth()->startOfMonth()
             : Carbon::now()->startOfMonth();
 
-        return MeterReading::with('client.MeterCategory', 'client.user.kilowatt')
+        return MeterReading::with('client.MeterCategory', 'client.user.kilowatt', 'payments')
             ->whereHas('client', fn($q) => $q->where('user_id', Auth::id())
                 ->where(function ($q) {
                     $q->where('first_name', 'like', "%{$this->search}%")
@@ -68,8 +68,6 @@ class MeterReadings extends Component
         $reading->amount = $newAmount;
         $reading->current_meter = $value;
         $reading->reading_date = Carbon::now();
-        $reading->remaining_amount = $reading->amount + $reading->maintenance_cost;
-        $reading->status = $reading->remaining_amount > 0 ? 'unpaid' : 'paid';
 
         $wasFirstEntry = is_null($reading->reading_date);
 
@@ -87,7 +85,6 @@ class MeterReadings extends Component
                 'previous_meter' => $value,
                 'current_meter' => 0,
                 'amount' => 0,
-                'remaining_amount' => 0,
                 'maintenance_cost' => 0,
                 'reading_for_month' => $nextMonth,
                 'reading_date' => null,
@@ -95,6 +92,8 @@ class MeterReadings extends Component
             ]);
         }
 
+        // Recalculate status dynamically
+        $reading->status = $reading->remaining_amount <= 0 ? 'paid' : 'unpaid';
         $reading->save();
 
         session()->flash("saved_{$readingId}", true);
@@ -106,11 +105,8 @@ class MeterReadings extends Component
         $this->authorize('update', $reading);
 
         $value = (int) $value;
-
         $reading->maintenance_cost = $value;
-        $reading->remaining_amount = $reading->amount + $reading->maintenance_cost;
-        $reading->status = $reading->remaining_amount > 0 ? 'unpaid' : 'paid';
-
+        $reading->status = $reading->remaining_amount <= 0 ? 'paid' : 'unpaid';
         $reading->save();
 
         session()->flash("saved_{$readingId}", true);

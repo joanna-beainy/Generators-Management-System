@@ -4,6 +4,7 @@
         <button wire:click="export" class="btn btn-outline-success">تصدير إلى Excel</button>
     </div>
 
+    {{-- Alerts --}}
     @if(session('error'))
         <div class="alert alert-danger text-center">{{ session('error') }}</div>
     @endif
@@ -24,22 +25,28 @@
                         <th>العداد السابق</th>
                         <th>العداد الحالي</th>
                         <th>الاستهلاك</th>
-                        <th>المبلغ لهذا الشهر</th>
+                        <th>سعر الكيلو</th>
+                        <th>مبلغ هذا الشهر</th>
                         <th>الصيانة</th>
-                        <th>المبلغ المتوجب</th>
+                        <th>الإجمالي المستحق</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($readings as $index => $reading)
+                    @foreach($readings as $reading)
                         <tr wire:key="row-{{ $reading->id }}">
+                            {{-- Saved checkmark --}}
                             <td>
                                 @if(session("saved_{$reading->id}"))
                                     <span class="text-success fw-bold">✓</span>
                                 @endif
                             </td>
+
+                            {{-- Client info --}}
                             <td>{{ $reading->client_id }}</td>
                             <td>{{ $reading->client->fullName() }}</td>
-                            <td>{{ $reading->client->MeterCategory->category }}</td>
+                            <td>{{ $reading->client->MeterCategory->category ?? '-' }}</td>
+
+                            {{-- Meters --}}
                             <td>{{ $reading->previous_meter }}</td>
                             <td>
                                 <input type="number"
@@ -51,21 +58,35 @@
                                        wire:keydown.arrow-up.prevent="$dispatch('focus-prev-meter', { currentId: {{ $reading->id }} })"
                                        class="form-control form-control-sm text-center">
                             </td>
+
+                            {{-- Consumption --}}
                             <td>{{ $reading->consumption }}</td>
+
+                            {{-- Kilowatt price --}}
+                            <td>{{ number_format(optional($reading->client->user->kilowatt)->price ?? 0, 2) }}</td>
+
+                            {{-- Amount (for this month) --}}
                             <td>{{ number_format($reading->amount, 2) }}</td>
+
+                            {{-- Maintenance --}}
                             <td>
                                 <input type="number"
                                        wire:model.defer="readings.{{ $reading->id }}.maintenance_cost"
                                        wire:blur="$emit('blurMaintenanceCost', {{ $reading->id }}, $event.target.value)"
                                        class="form-control form-control-sm text-center">
                             </td>
-                            <td>{{ number_format($reading->remaining_amount, 2) }}</td>
+
+                            {{-- Total Due (amount + maintenance_cost) --}}
+                            <td class="fw-bold text-primary">
+                                {{ number_format($reading->total_due, 2) }}
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
 
+        {{-- Pagination --}}
         <div class="mt-3">
             {{ $readings->links() }}
         </div>
@@ -76,6 +97,7 @@
 
 @push('scripts')
 <script>
+    // Focus navigation between meter input fields
     window.addEventListener('focus-next-meter', event => {
         const ids = Array.from(document.querySelectorAll('[id^="meter-"]')).map(el => el.id.replace('meter-', ''));
         const currentIndex = ids.indexOf(event.detail.currentId.toString());
