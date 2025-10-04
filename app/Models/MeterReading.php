@@ -41,12 +41,6 @@ class MeterReading extends Model
         return $this->current_meter - $this->previous_meter;
     }
 
-    // 💰 Computed: Total Due
-    public function getTotalDueAttribute()
-    {
-        return $this->amount + $this->maintenance_cost + $this->remaining_amount;
-    }
-
     // 🔍 Scope: Unpaid readings
     public function scopeUnpaid($query)
     {

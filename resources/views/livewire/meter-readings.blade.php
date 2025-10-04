@@ -26,7 +26,6 @@
                         <th>الاستهلاك</th>
                         <th>المبلغ لهذا الشهر</th>
                         <th>الصيانة</th>
-                        <th>الرصيد السابق</th>
                         <th>المبلغ المتوجب</th>
                     </tr>
                 </thead>
@@ -61,7 +60,6 @@
                                        class="form-control form-control-sm text-center">
                             </td>
                             <td>{{ number_format($reading->remaining_amount, 2) }}</td>
-                            <td>{{ number_format($reading->total_due, 2) }}</td>
                         </tr>
                     @endforeach
                 </tbody>

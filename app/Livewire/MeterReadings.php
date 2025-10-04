@@ -65,14 +65,13 @@ class MeterReadings extends Component
         $categoryPrice = $client->MeterCategory->price;
         $newAmount = ($value - $reading->previous_meter) * $kilowattPrice + $categoryPrice;
 
-        $reading->remaining_amount -= $reading->amount;
         $reading->amount = $newAmount;
-        $reading->remaining_amount += $newAmount;
-
-        $wasFirstEntry = is_null($reading->reading_date);
         $reading->current_meter = $value;
         $reading->reading_date = Carbon::now();
+        $reading->remaining_amount = $reading->amount + $reading->maintenance_cost;
         $reading->status = $reading->remaining_amount > 0 ? 'unpaid' : 'paid';
+
+        $wasFirstEntry = is_null($reading->reading_date);
 
         $nextMonth = Carbon::parse($reading->reading_for_month)->addMonth()->startOfMonth();
         $nextReading = MeterReading::where('client_id', $client->id)
@@ -108,18 +107,19 @@ class MeterReadings extends Component
 
         $value = (int) $value;
 
-        $reading->remaining_amount -= $reading->maintenance_cost;
-        $reading->remaining_amount += $value;
         $reading->maintenance_cost = $value;
+        $reading->remaining_amount = $reading->amount + $reading->maintenance_cost;
+        $reading->status = $reading->remaining_amount > 0 ? 'unpaid' : 'paid';
+
         $reading->save();
 
         session()->flash("saved_{$readingId}", true);
     }
 
-    // public function export()
-    // {
-    //     return Excel::download(new MeterReadingsExport($this->search), 'meter_readings.xlsx');
-    // }
+    public function export()
+    {
+        return Excel::download(new MeterReadingsExport($this->search), 'meter_readings.xlsx');
+    }
 
     public function render()
     {
