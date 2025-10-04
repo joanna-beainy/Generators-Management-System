@@ -34,8 +34,9 @@ Route::middleware('auth')->group(function () {
     //Clients Routes
     Route::get('/clients/create', [ClientController::class, 'create'])->name('clients.create');
     Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
-    Route::get('/clients/{client}/edit', [ClientController::class, 'edit'])->name('clients.edit');
-    Route::put('/clients/{client}', [ClientController::class, 'update'])->name('clients.update');
+
+    // Meter Readings Route
+    Route::get('/meter-readings', [UserController::class, 'meterReadings'])->name('meter.readings');
 
 });
 

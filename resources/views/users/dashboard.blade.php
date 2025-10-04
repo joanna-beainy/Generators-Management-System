@@ -14,20 +14,20 @@
                 <div class="row row-cols-1 row-cols-md-3 g-3" dir="rtl">
                     @php
                         $buttons = [
-                            ['label' => 'إدخال العدادات', 'route' => '', 'icon' => 'bi-speedometer2'],
+                            ['label' => 'إدخال العدادات', 'route' => 'meter.readings', 'icon' => 'bi-speedometer2'],
                             ['label' => 'إدخال الأسعار', 'route' => 'manage.prices', 'icon' => 'bi-cash-stack'],
-                            ['label' => 'طباعة الإيصالات', 'route' => '', 'icon' => 'bi-printer'],
+                            ['label' => 'طباعة الإيصالات', 'route' => 'users.dashboard', 'icon' => 'bi-printer'],
                             ['label' => 'عرض لائحة المشتركين و تعديلها', 'route' => 'active.clients.index', 'icon' => 'bi-people'],
-                            ['label' => 'تقرير شهري للمشتركين', 'route' => '', 'icon' => 'bi-file-earmark-text'],
-                            ['label' => 'تقرير تحصيل شهري', 'route' => '', 'icon' => 'bi-coin'],
-                            ['label' => 'تقرير شهري لقراءة العدادات', 'route' => '', 'icon' => 'bi-speedometer'],
+                            ['label' => 'تقرير شهري للمشتركين', 'route' => 'users.dashboard', 'icon' => 'bi-file-earmark-text'],
+                            ['label' => 'تقرير تحصيل شهري', 'route' => 'users.dashboard', 'icon' => 'bi-coin'],
+                            ['label' => 'تقرير شهري لقراءة العدادات', 'route' => 'users.dashboard', 'icon' => 'bi-speedometer'],
                             ['label' => 'إدخال مشترك', 'route' => 'clients.create', 'icon' => 'bi-person-plus'],
-                            ['label' => 'إدخال دفعات', 'route' => '', 'icon' => 'bi-wallet2'],
+                            ['label' => 'إدخال دفعات', 'route' => 'users.dashboard', 'icon' => 'bi-wallet2'],
                             ['label' => 'عرض المولدات', 'route' => 'manage.generators', 'icon' => 'bi-lightning'],
-                            ['label' => 'طباعة إيصال مشترك', 'route' => '', 'icon' => 'bi-receipt'],
-                            ['label' => 'عرض العداد الموافق لكل مشترك', 'route' => '', 'icon' => 'bi-speedometer2'],
-                            ['label' => 'تقرير بأسماء المشتركين', 'route' => '', 'icon' => 'bi-file-person'],
-                            ['label' => 'تقرير عن المبالغ المستخدمة', 'route' => '', 'icon' => 'bi-currency-dollar'],
+                            ['label' => 'طباعة إيصال مشترك', 'route' => 'users.dashboard', 'icon' => 'bi-receipt'],
+                            ['label' => 'عرض العداد الموافق لكل مشترك', 'route' => 'users.dashboard', 'icon' => 'bi-speedometer2'],
+                            ['label' => 'تقرير بأسماء المشتركين', 'route' => 'users.dashboard', 'icon' => 'bi-file-person'],
+                            ['label' => 'تقرير عن المبالغ المستخدمة', 'route' => 'users.dashboard', 'icon' => 'bi-currency-dollar'],
                         ];
                     @endphp
 

@@ -30,4 +30,8 @@ class UserController extends Controller
         return view('users.TrashedClientsIndex');
     }
 
+    public function meterReadings(){
+        return view('users.meter-readings');
+    }
+
 }
