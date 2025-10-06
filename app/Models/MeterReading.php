@@ -15,6 +15,7 @@ class MeterReading extends Model
         'previous_meter',
         'current_meter',
         'amount',
+        'remaining_amount',
         'maintenance_cost',
         'reading_date',
         'reading_for_month',
@@ -26,20 +27,12 @@ class MeterReading extends Model
         'reading_for_month' => 'date',
     ];
 
-    protected $appends = ['consumption', 'total_due', 'remaining_amount'];
+    protected $appends = ['consumption', 'total_due'];
 
     // 🔗 Relationships
     public function client()
     {
         return $this->belongsTo(Client::class);
-    }
-
-    // 🔗 Payments Relationship (via pivot)
-    public function payments()
-    {
-        return $this->belongsToMany(Payment::class, 'payment_reading')
-            ->withPivot('applied_amount')
-            ->withTimestamps();
     }
 
     // ⚙️ Computed Attributes
@@ -53,15 +46,26 @@ class MeterReading extends Model
         return $this->amount + $this->maintenance_cost;
     }
 
-    public function getRemainingAmountAttribute()
+    // Update reading status based on remaining amount
+    public function updateStatus()
     {
-        return max(0, $this->total_due - $this->payments()->sum('payment_reading.applied_amount'));
+        if ($this->remaining_amount <= 0) {
+            $this->status = 'paid';
+        } else {
+            $this->status = 'unpaid';
+        }
+        $this->save();
     }
 
     // 🔍 Scopes
     public function scopeUnpaid($query)
     {
         return $query->where('status', 'unpaid');
+    }
+
+    public function scopeOldestFirst($query)
+    {
+        return $query->orderBy('reading_for_month', 'asc');
     }
 
     public function scopeForMonth($query, $month)

@@ -1,22 +1,73 @@
 <div class="container mt-4" dir="rtl">
-    <div class="d-flex justify-content-between mb-3">
-        <input type="text" wire:model.debounce.500ms="search" class="form-control w-25" placeholder="بحث بالاسم...">
-        <button wire:click="export" class="btn btn-outline-success">تصدير إلى Excel</button>
+    <!-- Month Header -->
+    @php
+        $readingMonth = Carbon\Carbon::now()->day <= 3
+            ? Carbon\Carbon::now()->subMonth()->startOfMonth()
+            : Carbon\Carbon::now()->startOfMonth();
+        
+        // Traditional Arabic month names
+        $arabicMonths = [
+            1 => 'كانون الثاني',
+            2 => 'شباط',
+            3 => 'آذار',
+            4 => 'نيسان',
+            5 => 'أيار',
+            6 => 'حزيران',
+            7 => 'تموز',
+            8 => 'آب',
+            9 => 'أيلول',
+            10 => 'تشرين الأول',
+            11 => 'تشرين الثاني',
+            12 => 'كانون الأول'
+        ];
+        
+        $monthName = $arabicMonths[$readingMonth->month];
+        $year = $readingMonth->year;
+    @endphp
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h5 class="mb-1">قراءات العدادات</h5>
+            <p class="text-muted mb-0">عن شهر {{ $monthName }} {{ $year }}</p>
+        </div>
+        <div class="col-md-6">
+            <div class="d-flex gap-2">
+                <input type="text" 
+                       wire:model.live.debounce.500ms="search" 
+                       class="form-control" 
+                       placeholder="ابحث بالاسم أو رقم العميل...">
+                <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i>
+                    اغلاق
+                </a>
+            </div>
+        </div>
     </div>
 
-    {{-- Alerts --}}
-    @if(session('error'))
-        <div class="alert alert-danger text-center">{{ session('error') }}</div>
-    @endif
-
-    @if(session('success'))
-        <div class="alert alert-success text-center">{{ session('success') }}</div>
-    @endif
+    <!-- Totals Summary -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="card bg-light">
+                <div class="card-body py-2">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <small class="text-muted">إجمالي الاستهلاك</small>
+                            <h6 class="mb-0">{{ number_format($readings->sum('consumption')) }} كيلوواط</h6>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">إجمالي المستحقات</small>
+                            <h6 class="mb-0">{{ number_format($readings->sum('total_due'), 2) }} د.أ</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     @if(count($readings))
-        <div class="table-responsive">
+        <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
             <table class="table table-striped table-hover text-center align-middle">
-                <thead class="table-secondary">
+                <thead class="table-secondary" style="position: sticky; top: 0;">
                     <tr>
                         <th>✓</th>
                         <th>الرقم</th>
@@ -51,47 +102,69 @@
                             <td>
                                 <input type="number"
                                        id="meter-{{ $reading->id }}"
-                                       wire:model.defer="readings.{{ $reading->id }}.current_meter"
-                                       wire:blur="$emit('blurCurrentMeter', {{ $reading->id }}, $event.target.value)"
-                                       wire:keydown.enter.prevent="$emit('blurCurrentMeter', {{ $reading->id }}, $event.target.value); $dispatch('focus-next-meter', { currentId: {{ $reading->id }} })"
-                                       wire:keydown.arrow-down.prevent="$dispatch('focus-next-meter', { currentId: {{ $reading->id }} })"
-                                       wire:keydown.arrow-up.prevent="$dispatch('focus-prev-meter', { currentId: {{ $reading->id }} })"
-                                       class="form-control form-control-sm text-center">
+                                       value="{{ $reading->current_meter }}"
+                                       wire:blur="updateCurrentMeter({{ $reading->id }}, $event.target.value)"
+                                       wire:keydown.enter.prevent="handleEnterKey({{ $reading->id }}, $event.target.value)"
+                                       wire:keydown.arrow-down.prevent="handleArrowDown({{ $reading->id }}, $event.target.value)"
+                                       wire:keydown.arrow-up.prevent="handleArrowUp({{ $reading->id }}, $event.target.value)"
+                                       class="form-control form-control-sm text-center {{ session("error_{$reading->id}") ? 'is-invalid' : '' }}">
                             </td>
 
                             {{-- Consumption --}}
-                            <td>{{ $reading->consumption }}</td>
+                            <td>{{ $reading->consumption }} ك.و</td>
 
                             {{-- Kilowatt price --}}
-                            <td>{{ number_format(optional($reading->client->user->kilowatt)->price ?? 0, 2) }}</td>
+                            <td>{{ number_format(optional($reading->client->user->kilowattPrice)->price ?? 0, 2) }} د.أ</td>
 
                             {{-- Amount (for this month) --}}
-                            <td>{{ number_format($reading->amount, 2) }}</td>
+                            <td>{{ number_format($reading->amount, 2) }} د.أ</td>
 
                             {{-- Maintenance --}}
                             <td>
                                 <input type="number"
-                                       wire:model.defer="readings.{{ $reading->id }}.maintenance_cost"
-                                       wire:blur="$emit('blurMaintenanceCost', {{ $reading->id }}, $event.target.value)"
+                                       step="0.01"
+                                       value="{{ $reading->maintenance_cost }}"
+                                       wire:blur="updateMaintenanceCost({{ $reading->id }}, $event.target.value)"
                                        class="form-control form-control-sm text-center">
                             </td>
 
                             {{-- Total Due (amount + maintenance_cost) --}}
                             <td class="fw-bold text-primary">
-                                {{ number_format($reading->total_due, 2) }}
+                                {{ number_format($reading->total_due, 2) }} د.أ
                             </td>
                         </tr>
+                        {{-- Error message for this specific row --}}
+                        @if(session("error_{$reading->id}"))
+                            <tr>
+                                <td colspan="11" class="p-2">
+                                    <div class="alert alert-danger mb-0 py-2" role="alert">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                <strong class="me-2">خطأ:</strong>
+                                                {{ session("error_{$reading->id}") }}
+                                            </div>
+                                            <button type="button" 
+                                                    class="btn-close" 
+                                                    onclick="this.parentElement.parentElement.style.display='none'">
+                                            </button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endif
                     @endforeach
                 </tbody>
             </table>
         </div>
-
-        {{-- Pagination --}}
-        <div class="mt-3">
-            {{ $readings->links() }}
-        </div>
     @else
-        <h4 class="text-center mt-5">لا يوجد قراءات لهذا الشهر</h4>
+        <div class="text-center mt-5">
+            <h4>لا يوجد قراءات لشهر {{ $monthName }} {{ $year }}</h4>
+            <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary mt-3">
+                <i class="fas fa-times me-1"></i>
+                اغلاق
+            </a>
+        </div>
     @endif
 </div>
 
@@ -117,6 +190,13 @@
             const prevInput = document.getElementById(`meter-${prevId}`);
             prevInput?.focus();
             prevInput?.select();
+        }
+    });
+
+    // Simple alert dismissal
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('btn-close')) {
+            e.target.closest('.alert').style.display = 'none';
         }
     });
 </script>
