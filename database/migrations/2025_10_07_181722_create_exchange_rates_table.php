@@ -11,15 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('meter_categories', function (Blueprint $table) {
+        Schema::create('exchange_rates', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('category');
-            $table->decimal('price', 8, 2);
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->integer('exchange_rate')->default(89500);
             $table->timestamps();
-            $table->softDeletes();
         });
-
     }
 
     /**
@@ -27,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('meter_categories');
+        Schema::dropIfExists('exchange_rates');
     }
 };

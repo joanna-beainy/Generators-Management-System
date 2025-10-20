@@ -16,13 +16,13 @@ return new class extends Migration
             $table->foreignId('client_id')->constrained()->onDelete('cascade');
             $table->unsignedInteger('previous_meter')->default(0);
             $table->unsignedInteger('current_meter')->default(0);
-            $table->decimal('amount', 10, 2)->default(0); // base monthly bill
-            $table->decimal('remaining_amount', 10, 2)->default(0); // unpaid balance for that month
-            $table->decimal('maintenance_cost', 10, 2)->default(0); // monthly maintenance
-            $table->date('reading_date')->nullable(); // set to now() when reading entered
-            $table->date('reading_for_month'); // month this reading belongs to
+            $table->decimal('amount', 10, 2)->default(0);
+            $table->decimal('remaining_amount', 10, 2)->default(0); 
+            $table->decimal('maintenance_cost', 10, 2)->default(0);
+            $table->date('reading_date')->nullable();
+            $table->date('reading_for_month');
             $table->enum('status', ['unpaid', 'pending', 'paid'])->default('unpaid');
-            $table->softDeletes(); // ✅ enable soft deletes
+            $table->softDeletes(); 
             $table->timestamps();
         });
     }

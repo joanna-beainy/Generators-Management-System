@@ -20,7 +20,10 @@ class KilowattPrice extends Component
             'price' => 'required|numeric|min:0',
         ]);
 
-        Auth::user()->kilowattPrice->update(['price' => $this->price]);
+        KilowattPrice::updateOrCreate(
+            ['user_id' => Auth::id()],
+            ['price' => $this->price]
+        );
 
         session()->flash('success_kilowatt', 'تم تحديث سعر الكيلووات بنجاح.');
     }

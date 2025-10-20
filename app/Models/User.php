@@ -26,46 +26,6 @@ class User extends Authenticatable
         'password',
     ];
 
-    protected static function booted()
-    {
-        // When a User is created, create a corresponding Kilowatt record
-        static::created(function ($user) {
-            if (!$user->is_admin){
-                KilowattPrice::create([
-                    'user_id' => $user->id,  // Associate kilowatt with the newly created user
-                    'price' => 0,  // Default price for the kilowatt (can be customized)
-                ]);
-            }
-        });
-
-        static::deleting(function ($user) {
-            if ($user->isForceDeleting()) {
-                // Force delete related entities
-                $user->phoneNumbers()->forceDelete();
-                $user->clients()->forceDelete();
-                $user->kilowattPrice()->forceDelete();
-                $user->meterCategories()->forceDelete();
-                $user->generators()->forceDelete();
-            } else {
-                // Soft delete related entities
-                $user->phoneNumbers()->delete();
-                $user->clients()->delete();
-                $user->kilowattPrice()->delete();
-                $user->meterCategories()->delete();
-                $user->generators()->delete();
-            }
-        });
-
-        static::restoring(function ($user) {
-            // Restore related entities
-            $user->phoneNumbers()->withTrashed()->restore();
-            $user->clients()->withTrashed()->restore();
-            $user->kilowattPrice()->withTrashed()->restore();
-            $user->meterCategories()->withTrashed()->restore();
-            $user->generators()->withTrashed()->restore();
-        });
-    }
-
 
     /**
      * The attributes that should be hidden for serialization.
@@ -114,5 +74,9 @@ class User extends Authenticatable
         return $this->hasMany(MeterCategory::class);
     }
 
+    public function exchangeRates()
+    {
+        return $this->hasOne(ExchangeRate::class);
+    }
 
 }

@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @livewireStyles
     <style>
         body {
             padding-top: 70px; /* Prevent content overlap with fixed navbar */
@@ -41,5 +42,7 @@
     </main>
 
     @yield('scripts')
+    @stack('scripts')
+    @livewireScripts
 </body>
 </html>

@@ -22,8 +22,8 @@ class UserController extends Controller
         return view('users.manageGenerators');
     }
 
-    public function activeClientsIndex(){
-        return view('users.ActiveClientsIndex');
+    public function ClientsIndex(){
+        return view('users.ClientsIndex');
     }
 
     public function trashedClientsIndex(){
@@ -34,4 +34,20 @@ class UserController extends Controller
         return view('users.meter-readings');
     }
 
+    public function paymentEntry(){
+        return view('users.paymentEntry');
+    }
+
+    public function paymentHistory($clientId)
+    {
+        return view('users.payment-history', compact('clientId'));
+    }
+
+    public function maintenanceEntry(){
+        return view('users.maintenanceEntry');
+    }
+
+    public function maintenanceList($clientId){
+        return view('users.maintenanceList', compact('clientId'));
+    }
 }

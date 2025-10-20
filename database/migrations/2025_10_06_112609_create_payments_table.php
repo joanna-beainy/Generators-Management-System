@@ -11,15 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('meter_categories', function (Blueprint $table) {
+        Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('category');
-            $table->decimal('price', 8, 2);
+            $table->foreignId('client_id')->constrained()->onDelete('cascade');
+            $table->decimal('amount', 10, 2); 
+            $table->decimal('discount', 10, 2)->default(0); 
+            $table->timestamp('paid_at'); 
             $table->timestamps();
-            $table->softDeletes();
         });
-
     }
 
     /**
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('meter_categories');
+        Schema::dropIfExists('payments');
     }
 };

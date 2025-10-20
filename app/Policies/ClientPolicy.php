@@ -27,15 +27,5 @@ class ClientPolicy
     {
         return $user->id === $client->user_id;
     }
-
-    public function delete(User $user, Client $client)
-    {
-        return $user->id === $client->user_id;
-    }
-
-    public function restore(User $user, Client $client)
-    {
-        return $user->id === $client->user_id;
-    }
 }
 

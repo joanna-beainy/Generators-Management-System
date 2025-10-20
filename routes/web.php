@@ -1,14 +1,14 @@
 <?php
 
+use App\Livewire\ShowClients;
+use App\Livewire\MaintenanceList;
+use App\Livewire\MaintenanceEntry;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\MainController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientController;
-use App\Http\Controllers\GeneratorController;
-use App\Http\Controllers\MeterCategoryController;
-use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
+
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -26,17 +26,23 @@ Route::middleware('auth')->group(function () {
     // Manage Prices Route
     Route::get('/manage-prices', [UserController::class, 'managePrices'])->name('manage.prices');
 
-    // Active Clients Route
-    Route::get('/active-clients', [UserController::class, 'activeClientsIndex'])->name('active.clients.index');
-    // Trashed Clients Route
-    Route::get('/trashed-clients', [UserController::class, 'trashedClientsIndex'])->name('trashed.clients.index');
+    
 
     //Clients Routes
+    Route::get('/clients', ShowClients::class)->name('clients.index');
     Route::get('/clients/create', [ClientController::class, 'create'])->name('clients.create');
     Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
 
     // Meter Readings Route
     Route::get('/meter-readings', [UserController::class, 'meterReadings'])->name('meter.readings');
+
+    // Payments Route
+    Route::get('/payment-entry', [UserController::class, 'paymentEntry'])->name('payment.entry');
+    Route::get('/payment-history/{clientId?}', [UserController::class, 'paymentHistory'])->name('payment.history');
+
+    // Maintenance Routes
+    Route::get('/maintenance-entry', [UserController::class, 'maintenanceEntry'])->name('maintenance.entry');
+    Route::get('/maintenance-list/{clientId}', [UserController::class, 'maintenanceList'])->name('maintenance.list');
 
 });
 

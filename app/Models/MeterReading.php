@@ -2,75 +2,89 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class MeterReading extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'client_id',
         'previous_meter',
         'current_meter',
         'amount',
-        'remaining_amount',
         'maintenance_cost',
+        'previous_balance',
+        'remaining_amount',
         'reading_date',
         'reading_for_month',
-        'status',
     ];
 
     protected $casts = [
-        'reading_date' => 'datetime',
+        'reading_date' => 'date',
         'reading_for_month' => 'date',
+        'amount' => 'decimal:2',
+        'maintenance_cost' => 'decimal:2',
+        'previous_balance' => 'decimal:2',
+        'remaining_amount' => 'decimal:2',
     ];
 
     protected $appends = ['consumption', 'total_due'];
 
-    // 🔗 Relationships
+    //Relationships
     public function client()
     {
         return $this->belongsTo(Client::class);
     }
 
-    // ⚙️ Computed Attributes
-    public function getConsumptionAttribute()
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    //Accessors
+    public function getConsumptionAttribute(): int
     {
         return $this->current_meter - $this->previous_meter;
     }
 
-    public function getTotalDueAttribute()
+    public function getTotalDueAttribute(): float
     {
-        return $this->amount + $this->maintenance_cost;
+        return $this->amount + $this->maintenance_cost + $this->previous_balance;
     }
 
-    // Update reading status based on remaining amount
-    public function updateStatus()
+    //Static helper
+    public static function latestForClient($clientId)
     {
-        if ($this->remaining_amount <= 0) {
-            $this->status = 'paid';
-        } else {
-            $this->status = 'unpaid';
-        }
-        $this->save();
+        return self::where('client_id', $clientId)
+            ->orderByDesc('reading_for_month')
+            ->first();
     }
 
-    // 🔍 Scopes
-    public function scopeUnpaid($query)
+    public static function latestPerActiveClient(int $userId)
     {
-        return $query->where('status', 'unpaid');
+        return self::whereHas('client', fn ($q) => 
+                $q->active()
+                ->where('user_id', $userId)
+            )
+            ->orderByDesc('reading_for_month')
+            ->get()
+            ->groupBy('client_id')
+            ->map(fn ($group) => $group->first()) 
+            ->sortBy('client_id')
+            ->values();
     }
 
-    public function scopeOldestFirst($query)
+
+    //scopes
+    public function scopeForClient($query, $clientId)
     {
-        return $query->orderBy('reading_for_month', 'asc');
+        return $query->where('client_id', $clientId);
     }
 
-    public function scopeForMonth($query, $month)
+    public function scopeLatest($query)
     {
-        return $query->whereMonth('reading_for_month', $month->month)
-                     ->whereYear('reading_for_month', $month->year);
+        return $query->orderByDesc('reading_for_month');
     }
 }

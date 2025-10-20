@@ -58,13 +58,13 @@
                             <tr>
                                 <td class="fw-semibold">{{ $generator->name }}</td>
                                 <td>
-                                    {{ $generator->customers_count > 0 ? $generator->customers_count : '_' }}
+                                    {{ $generator->clientsCount() > 0 ? $generator->clientsCount() : '_' }}
                                 </td>
                                 <td>
                                     <button wire:click="deleteGenerator({{ $generator->id }})"
                                             class="btn btn-outline-danger btn-sm rounded-pill shadow-sm"
                                             title="حذف"
-                                            onclick="return confirm('هل أنت متأكد من حذف هذا المولد؟')">
+                                            wire:confirm="هل أنت متأكد من حذف هذا المولد؟">
                                         <i class="bi bi-trash3"></i>
                                     </button>
                                 </td>

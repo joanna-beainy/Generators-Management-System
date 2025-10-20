@@ -26,4 +26,9 @@ class Generator extends Model
         return $this->hasMany(Client::class);
     }
 
+    public function clientsCount()
+    {
+        return $this->clients()->count();
+    }
+
 }
