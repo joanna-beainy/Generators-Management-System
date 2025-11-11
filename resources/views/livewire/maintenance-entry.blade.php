@@ -1,14 +1,14 @@
-<div class="container mt-4" dir="rtl" x-data="{ showSuccessAlert: true, showErrorAlert: true }">
+<div class="container mt-4" dir="rtl">
     <div class="card shadow-sm">
-        <div class="card-header bg-success text-white"> 
+        <div class="card-header bg-light text-dark">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <h5 class="mb-0">
-                        <i class="bi bi-tools me-2"></i>
+                        <i class="bi bi-tools text-success me-2"></i>
                         إدخال مصاريف صيانة جديدة
                     </h5>
                 </div>
-                <a href="{{ route('users.dashboard') }}" class="btn btn-light btn-sm">
+                <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-house me-1"></i>
                     إغلاق
                 </a>
@@ -16,35 +16,19 @@
         </div>
         
         <div class="card-body">
-            <!-- Success Message -->
-            @if ($successMessage)
-                <div class="alert alert-success alert-dismissible fade show" 
-                     role="alert"
-                     x-data="{ show: true }" 
-                     x-show="show"
-                     x-init="setTimeout(() => show = false, 5000)"
-                     x-transition:leave="transition ease-in duration-300"
-                     x-transition:leave-start="opacity-100"
-                     x-transition:leave-end="opacity-0">
-                    <i class="bi bi-check-circle me-2"></i>
-                    {{ $successMessage }}
-                    <button type="button" class="btn-close" wire:click="$set('successMessage', null)"></button>
-                </div>
-            @endif
-
-            <!-- Error Message -->
-            @if ($errorMessage)
-                <div class="alert alert-danger alert-dismissible fade show" 
-                     role="alert"
-                     x-data="{ show: true }" 
-                     x-show="show"
-                     x-init="setTimeout(() => show = false, 5000)"
-                     x-transition:leave="transition ease-in duration-300"
-                     x-transition:leave-start="opacity-100"
-                     x-transition:leave-end="opacity-0">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    {{ $errorMessage }}
-                    <button type="button" class="btn-close" wire:click="$set('errorMessage', null)"></button>
+            {{-- Alpine.js Auto-Disappearing Alert --}}
+            @if ($alertMessage)
+                <div 
+                    x-data="{ show: true }" 
+                    x-show="show" 
+                    x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
+                    x-transition:leave="transition ease-in duration-300"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4">
+                    <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
+                    {{ $alertMessage }}
+                    <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
                 </div>
             @endif
 
@@ -87,13 +71,12 @@
 
             <!-- Maintenance Form -->
             @if($selectedClient)
-                {{-- REMOVED the offered client check since we filtered them in the query --}}
                 
                 <!-- Show maintenance form for regular clients -->
                 <div class="border rounded p-4 bg-light" wire:key="maintenance-form-{{ $selectedClient->id }}">
                     <h6 class="mb-3">
-                        <i class="bi bi-person me-2"></i>
-                        بيانات الصيانة للمشترك: <span class="text-primary">{{ $selectedClient->full_name }}</span>
+                        <i class="bi bi-person h4"></i>
+                        <span class="text-primary fw-bold" style="font-size:20px">{{ $selectedClient->full_name }}</span>
                     </h6>
                     
                     <form wire:submit.prevent="save">
@@ -115,7 +98,7 @@
 
                             <!-- Amount -->
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">مبلغ الصيانة (د.أ) *</label>
+                                <label class="form-label fw-bold">مبلغ الصيانة ($) *</label>
                                 <div class="input-group">
                                     <input type="number" 
                                            wire:model="amount" 
@@ -134,7 +117,7 @@
 
                             <!-- Buttons -->
                             <div class="col-12 text-start">
-                                <button type="submit" class="btn btn-primary text-white" wire:loading.attr="disabled">
+                                <button type="submit" class="btn btn-success text-white" wire:loading.attr="disabled">
                                     <i class="bi bi-tools me-2"></i>
                                     إدخال مصاريف الصيانة
                                     <span wire:loading wire:target="save">
@@ -163,7 +146,7 @@
                     @elseif(!$search && $clients->isEmpty())
                         <div class="alert alert-info border-0">
                             <i class="bi bi-check-circle me-2"></i>
-                            لا يوجد مشتركين مسجلون في النظام
+                            لا يوجد مشتركين حتى الآن
                         </div>
                     @else
                        <div class="text-muted">

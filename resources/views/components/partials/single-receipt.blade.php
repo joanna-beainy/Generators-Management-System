@@ -59,7 +59,7 @@
             </tr>
             <tr style="font-weight: bold;">
                 <td style="padding: 2px;"><strong>المجموع:</strong></td>
-                <td style="padding: 2px;"><strong>ما يعادل بالليرة اللبنانية:</strong>{{ number_format($receiptData['total_due_lbp'], 0) }} ل.ل</td>
+                <td style="padding: 2px;"></td>
                 <td style="padding: 2px;">{{ number_format($receiptData['total_due'], 2) }}$</td>
             </tr>
         </tbody>

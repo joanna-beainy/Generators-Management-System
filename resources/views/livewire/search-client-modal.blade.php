@@ -3,15 +3,31 @@
     <div class="modal fade show d-block" tabindex="-1" wire:ignore.self>
         <div class="modal-dialog modal-m modal-dialog-centered">
             <div class="modal-content shadow-lg">
-                <div class="modal-header bg-success text-white">
+                <div class="modal-header bg-light text-dark">
                     <h5 class="modal-title">
-                        <i class="fas fa-search me-2"></i>
+                        <i class="fas fa-search text-success me-2"></i>
                         بحث عن مشترك
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" wire:click="closeModal"></button>
+                    <button type="button" class="btn-close btn-close-dark" wire:click="closeModal"></button>
                 </div>
 
                 <div class="modal-body">
+                    {{-- Auto-Disappearing Alert --}}
+                    @if ($alertMessage)
+                        <div 
+                            x-data="{ show: true }" 
+                            x-show="show" 
+                            x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
+                            x-transition:leave="transition ease-in duration-300"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0"
+                            class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4">
+                            <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
+                            {{ $alertMessage }}
+                            <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
+                        </div>
+                    @endif
+
                     <!-- Search -->
                     <div class="mb-3">
                         <label class="form-label fw-bold">ابحث عن المشترك</label>
@@ -37,12 +53,6 @@
                             @endforeach
                         </select>
                     </div>
-
-                    @if($errorMessage)
-                        <div class="alert alert-danger">
-                            {{ $errorMessage }}
-                        </div>
-                    @endif
                 </div>
 
                 <div class="modal-footer">

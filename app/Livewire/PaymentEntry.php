@@ -2,12 +2,15 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
+use Exception;
 use App\Models\Client;
 use App\Models\Payment;
+use Livewire\Component;
 use App\Models\ExchangeRate;
 use App\Models\MeterReading;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class PaymentEntry extends Component
 {
@@ -15,8 +18,8 @@ class PaymentEntry extends Component
     public $selectedClientId = null;
     public $amount = '';
     public $discount = '';
-    public $successMessage = null;
-    public $errorMessage = null;
+    public $alertMessage = null;
+    public $alertType = null;
     public $clients;
     public $showConfirmationModal = false;
     public $pendingPaymentData = null;
@@ -28,12 +31,21 @@ class PaymentEntry extends Component
     ];
 
     protected $messages = [
-        'selectedClientId.required' => 'يرجى اختيار العميل',
-        'amount.required' => 'المبلغ المدفوع مطلوب',
+        'selectedClientId.required' => 'يرجى اختيار المشترك',
+        'amount.required' => 'يرجى ادخال المبلغ المدفوع',
         'amount.min' => 'المبلغ يجب أن يكون أكبر من الصفر',
+        'amount.numeric' => 'المبلغ يجب أن يكون رقمًا صالحًا',
+        'discount.min' => 'الخصم يجب أن يكون صفر على الأقل',
+        'discount.numeric' => 'الخصم يجب أن يكون رقمًا صالحًا',
     ];
 
     protected $listeners = ['resetPaymentEntryFilters' => 'resetFilters'];
+
+    private function setAlert($message, $type = 'success')
+    {
+        $this->alertMessage = $message;
+        $this->alertType = $type;
+    }
 
     // Get exchange rate from database
     public function getExchangeRateProperty()
@@ -98,7 +110,7 @@ class PaymentEntry extends Component
     public function handleSearch()
     {
         $this->loadClients();
-        $this->errorMessage = null;
+        $this->clearAlert();
         
         // Auto-select if only one result
         if ($this->clients->count() === 1) {
@@ -108,57 +120,80 @@ class PaymentEntry extends Component
         }
     }
 
-
     public function updatedSelectedClientId($value)
     {
         if ($value) {
             $this->resetValidation();
             $this->amount = '';
             $this->discount = '';
-            $this->errorMessage = null;
+            $this->clearAlert();
             $this->loadClients();
         }
     }
 
     public function updatedAmount()
     {
-        $this->errorMessage = null;
+        $this->clearAlert();
     }
 
     public function updatedDiscount()
     {
-        $this->errorMessage = null;
+        $this->clearAlert();
+    }
+
+    public function clearAlert()
+    {
+        $this->alertMessage = null;
+        $this->alertType = null;
     }
 
     public function save()
     {
         $this->validate();
-        $this->errorMessage = null;
 
-        $client = Client::find($this->selectedClientId);
-        
-        if (!$client) {
-            $this->errorMessage = '❌ العميل المحدد غير موجود';
-            return;
+        try {
+            // Check authorization using Policy
+            $this->authorize('create', [Payment::class, $this->selectedClientId]);
+
+            $client = Client::find($this->selectedClientId);
+            
+            if (!$client) {
+                $this->setAlert('المشترك المحدد غير موجود', 'danger');
+                return;
+            }
+
+            // Prevent payments for offered clients
+            if ($client->is_offered) {
+                $this->setAlert('لا يمكن تسجيل دفعة للمشتركين المعفيين', 'danger');
+                return;
+            }
+
+            $currentRemainingUSD = $client->total_remaining_amount;
+
+            // Show confirmation for overpayment
+            if ($this->total_usd > $currentRemainingUSD && $currentRemainingUSD > 0) {
+                $overpaymentAmount = $this->total_usd - $currentRemainingUSD;
+                $this->pendingPaymentData = [
+                    'client_id' => $this->selectedClientId,
+                    'amount' => (float)$this->amount,
+                    'discount' => (float)$this->discount,
+                    'total_payment' => $this->total_usd,
+                    'current_remaining' => $currentRemainingUSD,
+                    'overpayment' => $overpaymentAmount,
+                ];
+                $this->showConfirmationModal = true;
+                return;
+            }
+
+            $this->processPayment($this->selectedClientId, (float)$this->amount, (float)$this->discount);
+
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (AuthorizationException $e) {
+            $this->setAlert('ليس لديك صلاحية لإضافة دفعة لهذا المشترك', 'danger');
+        } catch (Exception $e) {
+            $this->setAlert('حدث خطأ أثناء حفظ البيانات', 'danger');
         }
-
-        $currentRemainingUSD = $client->total_remaining_amount;
-
-        // Check if payment exceeds remaining amount, show confirmation
-        if ($this->total_usd > $currentRemainingUSD) {
-            $this->pendingPaymentData = [
-                'client_id' => $this->selectedClientId,
-                'amount' => (float)$this->amount,
-                'discount' => (float)$this->discount,
-                'total_payment' => $this->total_usd,
-                'current_remaining' => $currentRemainingUSD,
-                'overpayment' => $this->total_usd - $currentRemainingUSD,
-            ];
-            $this->showConfirmationModal = true;
-            return;
-        }
-
-        $this->processPayment($this->selectedClientId, (float)$this->amount, (float)$this->discount);
     }
 
     public function confirmPayment()
@@ -183,23 +218,24 @@ class PaymentEntry extends Component
 
     public function resetFilters()
     {
-        $this->reset(['search', 'selectedClientId', 'amount', 'discount', 'errorMessage', 'successMessage']);
+        $this->reset(['search', 'selectedClientId', 'amount', 'discount']);
+        $this->clearAlert();
         $this->loadClients();
     }
     
     private function processPayment($clientId, $amount, $discount)
     {
         try {
-            $latestReading = MeterReading::latestForClient($clientId);
+            $latestCompletedReading = MeterReading::latestCompletedForClient($clientId);
             
-            if (!$latestReading) {
-                $this->errorMessage = '❌ لا يوجد قراءة عداد للعميل';
+            if (!$latestCompletedReading) {
+                $this->setAlert('لا يوجد فاتورة سابقة للمشترك يمكن السداد لها', 'danger');
                 return;
             }
 
             $payment = Payment::create([
                 'client_id' => $clientId,
-                'meter_reading_id' => $latestReading->id,
+                'meter_reading_id' => $latestCompletedReading->id,
                 'amount' => $amount,
                 'discount' => $discount,
                 'paid_at' => now(),
@@ -207,17 +243,17 @@ class PaymentEntry extends Component
 
             $payment->applyToReading();
             
-            $this->reset(['search', 'selectedClientId', 'amount', 'discount', 'errorMessage']);
+            $this->reset(['search', 'selectedClientId', 'amount', 'discount']);
             $this->loadClients();
             
             // Emit event to show receipt modal
             $this->dispatch('showReceipt', clientId: $clientId);
             
-            $successMessage = "✅ تم تسجيل الدفعة بنجاح! المبلغ: {$amount} $ + خصم: {$discount} $";
-            $this->successMessage = $successMessage;
+            $successMessage = "تم تسجيل الدفعة بنجاح! المبلغ: {$amount} $ + خصم: {$discount} $";
+            $this->setAlert($successMessage, 'success');
 
-        } catch (\Exception $e) {
-            $this->errorMessage = '❌ حدث خطأ أثناء تسجيل الدفعة';
+        } catch (Exception $e) {
+            $this->setAlert('حدث خطأ أثناء تسجيل الدفعة', 'danger');
         }
     }
 

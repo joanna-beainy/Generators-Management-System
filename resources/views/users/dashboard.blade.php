@@ -4,8 +4,24 @@
 
 @section('content')
 <div class="row justify-content-center" 
-     x-data="{ showAlert: {{ session('success') ? 'true' : 'false' }} }" 
-     x-init="if(showAlert) { setTimeout(() => showAlert = false, 5000) }">
+     x-data="{
+        showAlert: false,
+        alertMessage: '',
+        alertType: 'success',
+        init() {
+            // Listen for alert events from Livewire components
+            Livewire.on('showAlert', (data) => {
+                this.showAlert = true;
+                this.alertMessage = data.message;
+                this.alertType = data.type;
+                
+                // Auto hide after 5 seconds
+                setTimeout(() => {
+                    this.showAlert = false;
+                }, 5000);
+            });
+        }
+     }">
 
     <div class="col-md-10">
         <div class="card shadow-sm border-0 rounded-4">
@@ -16,19 +32,32 @@
             </div>
 
             <div class="card-body">
-                <!-- ✅ Include Livewire components -->
+                <!-- Include Livewire components -->
                 @livewire('exchange-rate-modal')
                 @livewire('receipt-modal')
                 @livewire('search-client-modal')
 
-                <!-- ✅ Success Message -->
-                <template x-if="showAlert">
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle me-2"></i>
-                        {{ session('success') }}
-                        <button type="button" class="btn-close" @click="showAlert = false"></button>
-                    </div>
-                </template>
+                <!-- Global Alert for Dashboard -->
+                <div x-show="showAlert" 
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 transform translate-y-2"
+                     x-transition:enter-end="opacity-100 transform translate-y-0"
+                     x-transition:leave="transition ease-in duration-300"
+                     x-transition:leave-start="opacity-100 transform translate-y-0"
+                     x-transition:leave-end="opacity-0 transform translate-y-2"
+                     :class="{
+                         'alert-success': alertType === 'success',
+                         'alert-danger': alertType === 'danger'
+                     }"
+                     class="alert alert-dismissible fade show text-center rounded-3 shadow-sm mb-4"
+                     style="display: none;">
+                    <i :class="{
+                        'bi-check-circle': alertType === 'success',
+                        'bi-exclamation-triangle': alertType === 'danger'
+                    }" class="bi me-1"></i>
+                    <span x-text="alertMessage"></span>
+                    <button type="button" class="btn-close" @click="showAlert = false"></button>
+                </div>
 
                 <div class="row row-cols-1 row-cols-md-3 g-3" dir="rtl">
                     @php
@@ -36,15 +65,14 @@
                             ['label' => 'إدخال العدادات', 'route' => 'meter.readings', 'icon' => 'bi-speedometer2'],
                             ['label' => 'إدخال الأسعار', 'route' => 'manage.prices', 'icon' => 'bi-cash-stack'],
                             ['label' => 'عرض لائحة المشتركين و تعديلها', 'route' => 'clients.index', 'icon' => 'bi-people'],
-                            ['label' => 'تقرير شهري للمشتركين', 'route' => 'users.dashboard', 'icon' => 'bi-file-earmark-text'],
-                            ['label' => 'تقرير تحصيل شهري', 'route' => 'users.dashboard', 'icon' => 'bi-coin'],
-                            ['label' => 'تقرير شهري لقراءة العدادات', 'route' => 'users.dashboard', 'icon' => 'bi-speedometer'],
+                            ['label' => 'تقرير شهري للمشتركين', 'route' => 'meter-readings.monthly-report', 'icon' => 'bi-file-earmark-text'],
+                            ['label' => 'تقرير تحصيل شهري', 'route' => 'monthly.payment.report', 'icon' => 'bi-coin'],
+                            ['label' => 'تقرير شهري لقراءة العدادات', 'route' => 'meter-reading.form-report', 'icon' => 'bi-speedometer'],
                             ['label' => 'إدخال مشترك', 'route' => 'clients.create', 'icon' => 'bi-person-plus'],
                             ['label' => 'إدخال دفعات', 'route' => 'payment.entry', 'icon' => 'bi-wallet2'],
-                             ['label' => 'إدخال صيانة', 'route' => 'maintenance.entry', 'icon' => 'bi-tools'],
-                            ['label' => 'عرض المولدات', 'route' => 'manage.generators', 'icon' => 'bi-lightning'],
-                            ['label' => 'تقرير بأسماء المشتركين', 'route' => 'users.dashboard', 'icon' => 'bi-file-person'],
-                            ['label' => 'تقرير عن المبالغ المستخدمة', 'route' => 'users.dashboard', 'icon' => 'bi-currency-dollar'],
+                            ['label' => 'إدخال صيانة', 'route' => 'maintenance.entry', 'icon' => 'bi-tools'],
+                            ['label' => 'عرض المولدات', 'route' => 'manage.generators', 'icon' => 'bi-lightning'],                            
+                            ['label' => 'تقرير عن المبالغ المستحقة', 'route' => 'outstanding.amounts.report', 'icon' => 'bi-currency-dollar'],
                         ];
                     @endphp
 
@@ -58,7 +86,7 @@
                         </div>
                     @endforeach
 
-                    <!-- ✅ تعديل سعر الصرف -->
+                    <!-- تعديل سعر الصرف -->
                     <div class="col">
                         <button type="button" 
                                 onclick="Livewire.dispatch('openExchangeRateModal')"
@@ -68,28 +96,17 @@
                         </button>
                     </div>
 
-                    <!-- ✅ عرض مصاريف الصيانة -->
+                    <!-- عرض مصاريف الصيانة -->
                     <div class="col">
                         <button type="button" 
                                 onclick="Livewire.dispatch('openClientSearch', { actionType: 'view-maintenance' })"
                                 class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
                             <i class="bi bi-tools"></i>
-                            <span>عرض مصاريف الصيانة</span>
+                            <span>مصاريف الصيانة للمشترك</span>
                         </button>
                     </div>
 
-                    <!-- ✅ عرض دفعات مشترك -->
-                    <div class="col">
-                        <button type="button" 
-                                onclick="Livewire.dispatch('openClientSearch', { actionType: 'view-payments' })"
-                                class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-wallet-fill"></i>
-                            <span>عرض دفعات مشترك</span>
-                        </button>
-                    </div>
-
-
-                    <!-- ✅ طباعة جميع الإيصالات -->
+                    <!-- طباعة جميع الإيصالات -->
                     <div class="col">
                         <button type="button" 
                                 onclick="Livewire.dispatch('showBulkReceipts')"
@@ -99,17 +116,17 @@
                         </button>
                     </div>
 
-                    <!-- ✅ طباعة إيصال مشترك -->
+                    <!-- طباعة إيصال مشترك -->
                     <div class="col">
                         <button type="button" 
                                 onclick="Livewire.dispatch('openClientSearch', { actionType: 'print-receipt' })"
                                 class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-receipt"></i>
+                            <i class="bi bi-receipt-cutoff"></i>
                             <span>طباعة إيصال مشترك</span>
                         </button>
                     </div>
 
-                    <!-- ✅ عرض العداد الموافق لكل مشترك -->
+                    <!-- عرض العداد الموافق لكل مشترك -->
                     <div class="col">
                         <button type="button" 
                                 onclick="Livewire.dispatch('openClientSearch', { actionType: 'view-meter' })"

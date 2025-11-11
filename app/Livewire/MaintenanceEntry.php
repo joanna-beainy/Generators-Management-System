@@ -2,11 +2,14 @@
 
 namespace App\Livewire;
 
+use Exception;
 use App\Models\Client;
 use Livewire\Component;
 use App\Models\Maintenance;
 use App\Models\MeterReading;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class MaintenanceEntry extends Component
 {
@@ -15,8 +18,8 @@ class MaintenanceEntry extends Component
     public $amount = '';
     public $description = '';
     
-    public $successMessage = null;
-    public $errorMessage = null;
+    public $alertMessage = null;
+    public $alertType = null;
 
     protected $rules = [
         'selectedClientId' => 'required|exists:clients,id',
@@ -30,6 +33,12 @@ class MaintenanceEntry extends Component
         'amount.numeric' => 'يجب أن يكون المبلغ رقمًا',
         'amount.min' => 'يجب أن يكون المبلغ أكبر من الصفر',
     ];
+
+    private function setAlert($message, $type = 'success')
+    {
+        $this->alertMessage = $message;
+        $this->alertType = $type;
+    }
 
     public function loadClientsForSearch()
     {
@@ -60,6 +69,7 @@ class MaintenanceEntry extends Component
     public function handleSearch()
     {
         $this->resetValidation();
+        $this->clearAlert();
         
         // Auto-select if only one result
         $clients = $this->loadClientsForSearch();
@@ -74,7 +84,7 @@ class MaintenanceEntry extends Component
     {
         if ($value) {
             $this->resetValidation();
-            $this->clearMessages();
+            $this->clearAlert();
         }
     }
 
@@ -83,13 +93,13 @@ class MaintenanceEntry extends Component
         $this->search = '';
         $this->selectedClientId = null;
         $this->resetValidation();
-        $this->clearMessages();
+        $this->clearAlert();
     }
 
-    public function clearMessages()
+    public function clearAlert()
     {
-        $this->successMessage = null;
-        $this->errorMessage = null;
+        $this->alertMessage = null;
+        $this->alertType = null;
     }
 
     public function save()
@@ -97,20 +107,17 @@ class MaintenanceEntry extends Component
         $this->validate();
 
         try {
+            // Check authorization using Policy with $this->authorize()
+            $this->authorize('create', [Maintenance::class, $this->selectedClientId]);
+
             $client = $this->getSelectedClient();
             
             if (!$client) {
-                $this->errorMessage = 'المشترك غير موجود';
+                $this->setAlert('المشترك غير موجود', 'danger');
                 return;
             }
 
-            // Check if client is offered
-            if ($client->is_offered) {
-                $this->errorMessage = 'لا يمكن إدخال مصاريف صيانة للمشتركين المقدمين كتقدمة';
-                return;
-            }
-
-            // Create maintenance record using the model's method
+            // Create maintenance record
             $maintenance = Maintenance::addWithAutoHandling(
                 $this->selectedClientId,
                 $this->amount,
@@ -118,14 +125,18 @@ class MaintenanceEntry extends Component
             );
 
             // Success message
-            $this->successMessage = "✅ تم إدخال مصاريف الصيانة بنجاح للمشترك {$client->full_name}";
+            $this->setAlert(" تم إدخال مصاريف الصيانة بنجاح للمشترك {$client->full_name}", 'success');
 
             // Reset form
             $this->amount = '';
             $this->description = '';
 
-        } catch (\Exception $e) {
-            $this->errorMessage = 'حدث خطأ أثناء حفظ البيانات: ' . $e->getMessage();
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (AuthorizationException $e) {
+            $this->setAlert('ليس لديك صلاحية لإضافة مصاريف صيانة لهذا المشترك', 'danger');
+        } catch (Exception $e) {
+            $this->setAlert('حدث خطأ أثناء حفظ البيانات: ' . $e->getMessage(), 'danger');
         }
     }
 

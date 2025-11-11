@@ -27,11 +27,23 @@
             </div>
 
             <div class="ms-auto">
+
                 @auth
-                    <form action="{{ route('logout') }}" method="POST" class="d-inline">
-                        @csrf
-                        <button class="btn btn-outline-danger"><i class="bi bi-box-arrow-right"></i> خروج</button>
-                    </form>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end text-end" aria-labelledby="userMenu">
+                            <li><a class="dropdown-item" href="{{ route('user.profile') }}"><i class="bi bi-person-gear me-2"></i>تعديل معلومات الحساب</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form action="{{ route('logout') }}" method="POST" class="m-0">
+                                    @csrf
+                                    <button class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>خروج</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
                 @endauth
             </div>
         </div>

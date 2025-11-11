@@ -1,46 +1,24 @@
-@section('title', 'المشتركين')
 <div class="container" dir="rtl">
-    <!-- Success Alert -->
-    @if($successMessage)
-        <div x-data="{ show: true }" 
-             x-show="show"
-             x-init="setTimeout(() => show = false, 5000)"
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 transform translate-y-2"
-             x-transition:enter-end="opacity-100 transform translate-y-0"
-             x-transition:leave="transition ease-in duration-300"
-             x-transition:leave-start="opacity-100 transform translate-y-0"
-             x-transition:leave-end="opacity-0 transform translate-y-2"
-             class="alert alert-success alert-dismissible fade show shadow-sm rounded-3 text-center fw-semibold mb-4" 
-             role="alert">
-            <i class="bi bi-check-circle me-2"></i>
-            {{ $successMessage }}
-            <button type="button" class="btn-close" @click="show = false; $wire.set('successMessage', null)"></button>
+    <!-- Alpine.js Auto-Disappearing Alert -->
+    @if ($alertMessage)
+        <div 
+            x-data="{ show: true }" 
+            x-show="show" 
+            x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
+            x-transition:leave="transition ease-in duration-300"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4">
+            <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
+            {{ $alertMessage }}
+            <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
         </div>
     @endif
 
-    <!-- Error Alert -->
-    @if($errorMessage)
-        <div x-data="{ show: true }" 
-             x-show="show"
-             x-init="setTimeout(() => show = false, 5000)"
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 transform translate-y-2"
-             x-transition:enter-end="opacity-100 transform translate-y-0"
-             x-transition:leave="transition ease-in duration-300"
-             x-transition:leave-start="opacity-100 transform translate-y-0"
-             x-transition:leave-end="opacity-0 transform translate-y-2"
-             class="alert alert-danger alert-dismissible fade show shadow-sm rounded-3 text-center fw-semibold mb-4" 
-             role="alert">
-            <i class="bi bi-exclamation-triangle me-2"></i>
-            {{ $errorMessage }}
-            <button type="button" class="btn-close" @click="show = false; $wire.set('errorMessage', null)"></button>
-        </div>
-    @endif
-
+    <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="fw-bold text-dark mb-0">
-            <i class="bi bi-people-fill text-primary me-2"></i> المشتركين 
+            <i class="bi bi-people-fill text-success me-2"></i> المشتركين 
         </h3>
         <div class="d-flex gap-2">
             <a href="{{ route('clients.create') }}" class="btn btn-success rounded-pill shadow-sm px-4">
@@ -115,9 +93,9 @@
     @else
         <div class="card shadow-sm border-0 rounded-4">
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0 text-center">
-                        <thead class="table-secondary">
+                <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0 text-center ">
+                        <thead class="table-secondary" style="position: sticky; top: 0; z-index: 1;">
                             <tr>
                                 <td>الرقم</td>
                                 <th>الاسم الكامل</th>

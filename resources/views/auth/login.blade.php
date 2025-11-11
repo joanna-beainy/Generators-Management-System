@@ -3,7 +3,7 @@
 @section('title', 'تسجيل دخول')
 
 @section('content')
-<div class="row justify-content-center">
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
     <div class="col-md-5">
         <div class="card shadow-sm border-0 rounded-4">
             <div class="card-header bg-white text-center border-0 rounded-top-4">
@@ -35,7 +35,7 @@
                                placeholder="••••••••">
                     </div>
 
-                    <button type="submit" class="btn btn-dark btn-lg w-100 rounded-3">
+                    <button type="submit" class="btn btn-success btn-lg w-100 rounded-3">
                         دخول
                     </button>
                 </form>

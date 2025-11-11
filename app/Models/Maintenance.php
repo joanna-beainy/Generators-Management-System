@@ -22,23 +22,20 @@ class Maintenance extends Model
         'updated_at' => 'datetime',
     ];
 
-    /* -------------------------------- Relationships ------------------------------- */
-
+    // Relationships
     public function client()
     {
         return $this->belongsTo(Client::class);
     }
 
-    /* ---------------------------------- Accessors --------------------------------- */
-
+    // Accessors
     public function getTargetMonthAttribute()
     {
         // All maintenance added between the 1st and last day of a month belong to that month
         return $this->created_at->copy()->startOfMonth();
     }
 
-    /* ----------------------------------- Scopes ----------------------------------- */
-
+    // Scopes
     public function scopeForMonth($query, Carbon $month)
     {
         return $query->whereYear('created_at', $month->year)
@@ -50,29 +47,27 @@ class Maintenance extends Model
         return $query->where('client_id', $clientId);
     }
 
-    /* ----------------------------------- Core Logic -------------------------------- */
 
-    /**
-     * Add maintenance and automatically update the matching meter reading.
-     */
+    
+    // Add maintenance and automatically update the matching meter reading.
     public static function addWithAutoHandling($clientId, $amount, $description = null)
     {
         $now = Carbon::now();
         $targetMonth = $now->copy()->startOfMonth();
 
-        // 1️⃣ Create maintenance record
+        // Create maintenance record
         $maintenance = self::create([
             'client_id' => $clientId,
             'amount' => $amount,
             'description' => $description,
         ]);
 
-        // 2️⃣ Find the corresponding meter reading for this month
+        // Find the corresponding meter reading for this month
         $reading = MeterReading::where('client_id', $clientId)
             ->whereDate('reading_for_month', $targetMonth)
             ->first();
 
-        // 3️⃣ Update maintenance_cost and remaining_amount if reading exists
+        // Update maintenance_cost and remaining_amount if reading exists
         if ($reading) {
             $reading->increment('maintenance_cost', $amount);
             $reading->increment('remaining_amount', $amount);
@@ -81,9 +76,8 @@ class Maintenance extends Model
         return $maintenance;
     }
 
-    /**
-     * Delete maintenance and reverse its effect on the meter reading.
-     */
+
+    // Delete maintenance and reverse its effect on the meter reading.
     public function deleteWithAutoHandling()
     {
         $targetMonth = $this->created_at->copy()->startOfMonth();
@@ -100,7 +94,7 @@ class Maintenance extends Model
         return $this->delete();
     }
 
-    /* -------------------------- Helper / Display Functions ------------------------ */
+    // Helper / Display Functions
 
     public function getArabicMonthName()
     {
@@ -118,9 +112,6 @@ class Maintenance extends Model
         return number_format($this->amount, 0);
     }
 
-    /**
-     * Ensure this maintenance belongs to a specific user's client.
-     */
     public function belongsToUser($userId)
     {
         return $this->client && $this->client->user_id === $userId;

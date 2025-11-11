@@ -1,23 +1,26 @@
 <div class="d-flex justify-content-center">
     <div class="card shadow-sm border-0 rounded-4 w-100" style="max-width: 950px;" dir="rtl">
         <div class="card-header bg-white text-center fw-bold rounded-top-4 py-3">
-            <i class="bi bi-tags me-2 text-primary"></i>
+            <i class="bi bi-tags me-2 text-primary h4"></i>
             <span class="text-dark">فئات الاشتراك</span>
         </div>
         <div class="card-body p-4">
-            {{-- Alerts --}}
-            @if (session()->has('success_category'))
-                <div class="alert alert-success alert-dismissible fade show text-center rounded-3 shadow-sm">
-                    <i class="bi bi-check-circle me-1"></i> {{ session('success_category') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            {{-- Alpine.js Auto-Disappearing Alert --}}
+            @if ($alertMessage)
+                <div 
+                    x-data="{ show: true }" 
+                    x-show="show" 
+                    x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
+                    x-transition:leave="transition ease-in duration-300"
+                    x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4">
+                    <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
+                    {{ $alertMessage }}
+                    <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
                 </div>
             @endif
-            @if (session()->has('error_category'))
-                <div class="alert alert-danger alert-dismissible fade show text-center rounded-3 shadow-sm">
-                    <i class="bi bi-exclamation-triangle me-1"></i> {{ session('error_category') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
+
 
             {{-- Toggle Add Form --}}
             <div class="text-start mb-4">
@@ -71,15 +74,14 @@
                                         <input type="number" step="0.01"
                                                class="form-control text-center rounded-3 shadow-sm @error("categories.$index.price") is-invalid @enderror"
                                                wire:model.defer="categories.{{ $index }}.price"
-                                               style="direction: rtl; max-width: 180px; margin: auto;">
                                         @error("categories.$index.price") 
                                             <div class="invalid-feedback">{{ $message }}</div> 
                                         @enderror
                                     </td>
                                     <td>
                                         <button type="button" class="btn btn-outline-danger btn-sm rounded-pill shadow-sm"
-                                                wire:click="deleteCategory({{ $category['id'] }})"
-                                                onclick="return confirm('هل أنت متأكد من حذف هذه الفئة؟')"
+                                                x-data="{ categoryId: {{ $category['id'] }} }"
+                                                @click="if(confirm('هل أنت متأكد من حذف هذه الفئة؟')) { $wire.call('deleteCategory', categoryId) }"
                                                 title="حذف">
                                             <i class="bi bi-trash"></i>
                                         </button>

@@ -12,7 +12,8 @@ class SearchClientModal extends Component
     public $search = '';
     public $clients;
     public $selectedClientId = null;
-    public $errorMessage = null;
+    public $alertMessage = null;
+    public $alertType = null;
     public $actionType = null;
 
     protected $listeners = ['openClientSearch' => 'openModal'];
@@ -25,7 +26,7 @@ class SearchClientModal extends Component
     public function openModal($actionType)
     {
         $this->show = true;
-        $this->reset(['search', 'selectedClientId', 'errorMessage']);
+        $this->reset(['search', 'selectedClientId', 'alertMessage', 'alertType']);
         $this->actionType = $actionType;
         $this->loadClients();
     }
@@ -36,7 +37,7 @@ class SearchClientModal extends Component
             ->search($this->search)
             ->orderBy('id');
 
-        // ✅ Exclude offered clients for payment and maintenance actions
+        // Exclude offered clients for payment and maintenance actions
         if (in_array($this->actionType, ['print-receipt', 'view-maintenance', 'view-payments'])) {
             $query->where('is_offered', false);
         }
@@ -48,7 +49,8 @@ class SearchClientModal extends Component
     {
         $this->loadClients();
         $this->selectedClientId = null;
-        $this->errorMessage = null;
+        $this->alertMessage = null;
+        $this->alertType = null;
         
         if ($this->clients->count() === 1) {
             $this->selectedClientId = $this->clients->first()->id;
@@ -59,22 +61,29 @@ class SearchClientModal extends Component
     {
         if ($this->selectedClientId) {
             $this->resetValidation();
-            $this->errorMessage = null;
+            $this->alertMessage = null;
+            $this->alertType = null;
             $this->loadClients();
         }
+    }
+
+    private function setAlert($message, $type = 'danger')
+    {
+        $this->alertMessage = $message;
+        $this->alertType = $type;
     }
 
     public function handleSelection()
     {
         if (!$this->selectedClientId) {
-            $this->errorMessage = '❌ يرجى اختيار مشترك.';
+            $this->setAlert('يرجى اختيار مشترك.');
             return;
         }
 
         $client = Client::find($this->selectedClientId);
         
         if (!$client) {
-            $this->errorMessage = '❌ المشترك غير موجود.';
+            $this->setAlert('المشترك غير موجود.');
             return;
         }
 
@@ -82,7 +91,7 @@ class SearchClientModal extends Component
         switch ($this->actionType) {
             case 'print-receipt':
                 if ($client->is_offered) {
-                    $this->errorMessage = '❌ لا يمكن طباعة إيصال للمشتركين المقدمين كتقدمة.';
+                    $this->setAlert(' لا يمكن طباعة إيصال للمشتركين المعفيين من الدفع.');
                     return;
                 }
                 $this->dispatch('showReceipt', clientId: $this->selectedClientId);
@@ -90,22 +99,19 @@ class SearchClientModal extends Component
 
             case 'view-maintenance':
                 if ($client->is_offered) {
-                    $this->errorMessage = '❌ المشترك مقدم كتقدمة ولا توجد مصاريف صيانة مسجلة له.';
+                    $this->setAlert('المشترك معفى من الدفع ولا توجد مصاريف صيانة مسجلة له.');
                     return;
                 }
 
                 $this->redirect(route('maintenance.list', ['clientId' => $this->selectedClientId]), navigate: true);
                 break;
-            case 'view-payments':
-                if ($client->is_offered) {
-                    $this->errorMessage = '❌ المشترك مقدم كتقدمة ولا توجد دفعات مسجلة له.';
-                    return;
-                }
-                $this->redirect(route('payment.history', ['clientId' => $this->selectedClientId]), navigate: true);
-                break;
+
+            case 'view-meter':
+                $this->redirect(route('client.meter.readings', ['clientId' => $this->selectedClientId]), navigate: true);
+                break;    
 
             default:
-                $this->errorMessage = '❌ نوع العملية غير معروف.';
+                $this->setAlert('نوع العملية غير معروف.');
                 return;
         }
 
@@ -115,7 +121,7 @@ class SearchClientModal extends Component
     public function closeModal()
     {
         $this->show = false;
-        $this->reset(['search', 'selectedClientId', 'errorMessage', 'actionType']);
+        $this->reset(['search', 'selectedClientId', 'alertMessage', 'alertType', 'actionType']);
     }
 
     public function render()

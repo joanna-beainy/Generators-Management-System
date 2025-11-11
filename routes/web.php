@@ -11,38 +11,48 @@ use App\Http\Controllers\ClientController;
 
 
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/', [AuthController::class, 'login']);
 
 });
 
 Route::middleware('auth')->group(function () {
-    
+
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [UserController::class, 'showDashboard'])->name('users.dashboard');
+    Route::get('/user-profile', [UserController::class, 'userProfile'])->name('user.profile');
 
     // Manage Generators Route
     Route::get('/manage-generators', [UserController::class, 'manageGenerators'])->name('manage.generators');
     // Manage Prices Route
     Route::get('/manage-prices', [UserController::class, 'managePrices'])->name('manage.prices');
 
-    
 
     //Clients Routes
-    Route::get('/clients', ShowClients::class)->name('clients.index');
-    Route::get('/clients/create', [ClientController::class, 'create'])->name('clients.create');
-    Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');
+    Route::get('/clients', [UserController::class, 'ClientsIndex'])->name('clients.index');
+    Route::get('/clients/create', [UserController::class, 'createClient'])->name('clients.create');
 
     // Meter Readings Route
     Route::get('/meter-readings', [UserController::class, 'meterReadings'])->name('meter.readings');
+    Route::get('/client-meter-readings/{clientId}', [UserController::class, 'clientMeterReadings'])->name('client.meter.readings');
 
     // Payments Route
     Route::get('/payment-entry', [UserController::class, 'paymentEntry'])->name('payment.entry');
     Route::get('/payment-history/{clientId?}', [UserController::class, 'paymentHistory'])->name('payment.history');
+    Route::get('/monthly-payment-report', [UserController::class, 'monthlyPaymentReport'])->name('monthly.payment.report');
 
     // Maintenance Routes
     Route::get('/maintenance-entry', [UserController::class, 'maintenanceEntry'])->name('maintenance.entry');
     Route::get('/maintenance-list/{clientId}', [UserController::class, 'maintenanceList'])->name('maintenance.list');
+
+    // Monthly Client Report Route
+    Route::get('/monthly-client-report', [UserController::class, 'monthlyClientReport'])->name('meter-readings.monthly-report');
+
+    // Meter Reading Form Report Route
+    Route::get('/meter-reading-form-report', [UserController::class, 'meterReadingFormReport'])->name('meter-reading.form-report');
+
+    // Outstanding Amounts Report Route
+    Route::get('/outstanding-amounts-report', [UserController::class, 'outstandingAmountsReport'])->name('outstanding.amounts.report');
 
 });
 

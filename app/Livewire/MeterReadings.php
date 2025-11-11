@@ -6,6 +6,8 @@ use Livewire\Component;
 use App\Models\MeterReading;
 use App\Models\Client;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Auth\Access\AuthorizationException;
+use Exception;
 
 class MeterReadings extends Component
 {
@@ -13,45 +15,91 @@ class MeterReadings extends Component
     public $selectedClientId = null;
     public $savedReadings = [];
     public $focusMeterId = null;
+    
+    public $allReadings = [];
+    public $displayReadings = [];
+    
+    public $alertMessage = null;
+    public $alertType = null;
+    public $fieldErrors = [];
 
-    public function loadMeterReadings()
+    public function mount()
+    {
+        $this->allReadings = collect();
+        $this->displayReadings = collect();
+        $this->loadAllReadings();
+    }
+
+    private function setAlert($message, $type = 'success')
+    {
+        $this->alertMessage = $message;
+        $this->alertType = $type;
+    }
+
+    private function setFieldError($readingId, $message)
+    {
+        $this->fieldErrors[$readingId] = $message;
+    }
+
+    private function clearFieldError($readingId)
+    {
+        unset($this->fieldErrors[$readingId]);
+    }
+
+    public function loadAllReadings()
     {
         $userId = Auth::id();
 
-        // Subquery to get the latest reading ID per client
-        $latestReadingIds = MeterReading::selectRaw('MAX(id) as id')
-            ->whereHas('client', fn ($q) => 
-                $q->where('user_id', $userId)
-                ->active()
-            )
-            ->groupBy('client_id');
+        try {
+            // Check if user can view meter readings
+            $this->authorize('viewAny', MeterReading::class);
 
-        $query = MeterReading::with(['client.meterCategory', 'client.user.kilowattPrice'])
-            ->whereIn('id', $latestReadingIds);
+            $this->allReadings = MeterReading::latestPerActiveClient($userId)
+                ->load(['client.meterCategory', 'client.user.kilowattPrice', 'payments']);
 
-        // Apply filters
-        if ($this->selectedClientId) {
-            $query->where('client_id', $this->selectedClientId);
-        } elseif (trim($this->search) !== '') {
-            $query->whereHas('client', fn ($q) => $q->search($this->search));
+            // Apply filters
+            if ($this->selectedClientId) {
+                $this->allReadings = $this->allReadings->filter(
+                    fn($reading) => $reading->client_id == $this->selectedClientId
+                );
+            } elseif (trim($this->search) !== '') {
+                $this->allReadings = $this->allReadings->filter(
+                    fn($reading) => stripos($reading->client->full_name, $this->search) !== false
+                );
+            }
+
+            $this->updateDisplayReadings();
+
+        } catch (AuthorizationException $e) {
+            $this->setAlert('ليس لديك صلاحية لعرض قراءات العدادات', 'danger');
+            $this->allReadings = collect();
+            $this->displayReadings = collect();
+        } catch (Exception $e) {
+            $this->setAlert('حدث خطأ أثناء تحميل قراءات العدادات', 'danger');
+            $this->allReadings = collect();
+            $this->displayReadings = collect();
         }
-
-        return $query->orderBy('client_id')->get();
     }
-
 
     public function loadClientsForSearch()
     {
-        return Client::where('user_id', Auth::id())
-            ->active()
-            ->search($this->search)
-            ->orderBy('id')
-            ->get();
+        try {
+            return Client::where('user_id', Auth::id())
+                ->active()
+                ->search($this->search)
+                ->orderBy('id')
+                ->get();
+        } catch (Exception $e) {
+            $this->setAlert('حدث خطأ أثناء تحميل بيانات المشتركين', 'danger');
+            return collect();
+        }
     }
 
     public function handleSearch()
     {
         $this->resetValidation();
+        $this->clearAlert();
+        $this->fieldErrors = [];
         
         // Auto-select if only one result
         $clients = $this->loadClientsForSearch();
@@ -60,12 +108,28 @@ class MeterReadings extends Component
         } else {
             $this->selectedClientId = null;
         }
+        
+        $this->loadAllReadings();
     }
 
     public function updatedSelectedClientId($value)
     {
         if ($value) {
             $this->resetValidation();
+            $this->clearAlert();
+            $this->fieldErrors = [];
+        }
+        $this->updateDisplayReadings();
+    }
+
+    public function updateDisplayReadings()
+    {
+        if ($this->selectedClientId) {
+            $this->displayReadings = $this->allReadings->filter(
+                fn($reading) => $reading->client_id == $this->selectedClientId
+            );
+        } else {
+            $this->displayReadings = $this->allReadings;
         }
     }
 
@@ -74,101 +138,105 @@ class MeterReadings extends Component
         $this->search = '';
         $this->selectedClientId = null;
         $this->resetValidation();
+        $this->clearAlert();
+        $this->fieldErrors = [];
+        $this->loadAllReadings();
+    }
+
+    public function clearAlert()
+    {
+        $this->alertMessage = null;
+        $this->alertType = null;
     }
 
     public function updateCurrentMeter($readingId, $value, $moveFocus = null)
     {
-        $reading = MeterReading::with(['client.meterCategory', 'client.user.kilowattPrice', 'payments'])->findOrFail($readingId);
-        $client = $reading->client;
+        try {
+            $reading = MeterReading::with(['client.meterCategory', 'client.user.kilowattPrice', 'payments'])->findOrFail($readingId);
+            $client = $reading->client;
 
-        $this->authorize('update', $reading);
+            // Check authorization using Policy
+            $this->authorize('update', $reading);
 
-        $value = (int) $value;
-        $hasPayments = $reading->payments->count() > 0;
-        $totalPaid = $reading->payments->sum('amount');
+            $value = (int) $value;
 
-        if ($value < $reading->previous_meter) {
-            session()->flash("error_{$readingId}", 'العداد الحالي يجب أن يكون أكبر من العداد السابق.');
-            return;
-        }
+            $totalPaid = $reading->totalPaid();
 
-        // If payments exist, show warning but allow correction
-        if ($hasPayments && $reading->current_meter !== $value) {
-            $originalTotalDue = $reading->total_due;
-            
-            // Calculate new total due after correction
-            $kilowattPrice = $client->user->kilowattPrice->price ?? 0;
-            $categoryPrice = $client->meterCategory->price ?? 0;
-            $newConsumption = $value - $reading->previous_meter;
-            $newAmount = ($newConsumption * $kilowattPrice) + $categoryPrice;
-            $newTotalDue = $newAmount + $reading->maintenance_cost + $reading->previous_balance;
-            
-            $balanceChange = $newTotalDue - $originalTotalDue;
-            
-            if ($balanceChange > 0) {
-                session()->flash("warning_{$readingId}", 
-                    "⚠️ تحذير: العميل سدد {$totalPaid} د.أ بالفعل. التصحيح سيزيد المستحق بمقدار {$balanceChange} د.أ."
-                );
-            } else {
-                session()->flash("warning_{$readingId}", 
-                    "ℹ️ العميل سدد {$totalPaid} د.أ. التصحيح سيقلل المستحق بمقدار " . abs($balanceChange) . " د.أ."
-                );
+            // Clear any previous field error for this reading
+            $this->clearFieldError($readingId);
+
+            if ($value < $reading->previous_meter) {
+                $this->setFieldError($readingId, 'العداد الحالي يجب أن يكون أكبر من العداد السابق.');
+                return;
             }
-        }
 
-        // Check if client is offered
-        if ($client->is_offered) {
-            if ($reading->current_meter !== $value) {
+            // Check if client is offered
+            if ($client->is_offered) {
+            
+                // For offered clients, set everything to 0
                 $reading->current_meter = $value;
                 $reading->amount = 0;
                 $reading->maintenance_cost = 0;
+                $reading->previous_balance = 0;
                 $reading->remaining_amount = 0;
                 $reading->reading_date = now();
+                
                 $reading->save();
 
                 $this->savedReadings[$readingId] = true;
-            }
-        } else {
-            if ($reading->current_meter !== $value) {
+                $this->setAlert('تم تحديث قراءة العداد للمشترك.', 'success');
+                
+            } else {
+                $actualPreviousBalance = $this->calculateActualPreviousBalance($client->id, $reading->reading_for_month);
+
                 $reading->current_meter = $value;
                 $kilowattPrice = $client->user->kilowattPrice->price ?? 0;
                 $categoryPrice = $client->meterCategory->price ?? 0;
                 $consumption = $value - $reading->previous_meter;
                 
                 $reading->amount = ($consumption * $kilowattPrice) + $categoryPrice;
+                $reading->previous_balance = $actualPreviousBalance;
                 
-                // ✅ FIXED: Calculate remaining_amount correctly considering payments
-                $newTotalDue = $reading->amount + $reading->maintenance_cost + $reading->previous_balance;
+                // Calculate remaining_amount correctly considering payments and actual previous balance
+                $newTotalDue = $reading->amount + $reading->maintenance_cost + $actualPreviousBalance;
                 $reading->remaining_amount = $newTotalDue - $totalPaid;
-
-                $reading->reading_date = now();
-                $reading->save();
+                $reading->reading_date = now(); 
+                
+                $reading->save(); 
 
                 $this->savedReadings[$readingId] = true;
                 
-                // Show appropriate message
-                if ($hasPayments) {
-                    $newRemaining = $reading->remaining_amount;
-                    session()->flash("success_{$readingId}", 
-                        "✅ تم تصحيح العداد. الرصيد المتبقي بعد السداد: {$newRemaining} د.أ"
-                    );
-                } else {
-                    session()->flash("success_{$readingId}", 
-                        "✅ تم تحديث قراءة العداد. الاستهلاك: {$consumption} ك.و"
-                    );
-                }
+                $this->setAlert('تم تحديث قراءة العداد للمشترك.', 'success');
             }
-        }
 
-        session()->forget("error_{$readingId}");
+            if ($moveFocus === 'next') {
+                $this->focusMeterId = $this->getNextMeterId($readingId);
+            } elseif ($moveFocus === 'prev') {
+                $this->focusMeterId = $this->getPrevMeterId($readingId);
+            }
+            
+            // Reload readings to reflect changes
+            $this->loadAllReadings();
 
-        if ($moveFocus === 'next') {
-            $this->focusMeterId = $this->getNextMeterId($readingId);
-        } elseif ($moveFocus === 'prev') {
-            $this->focusMeterId = $this->getPrevMeterId($readingId);
+        } catch (AuthorizationException $e) {
+            $this->setAlert('ليس لديك صلاحية لتحديث قراءة العداد هذه', 'danger');
+        } catch (Exception $e) {
+            $this->setAlert('حدث خطأ أثناء تحديث قراءة العداد.', 'danger');
         }
     }
 
+    // Calculate the actual previous balance from the latest completed reading BEFORE the current month
+    private function calculateActualPreviousBalance($clientId, $currentMonth)
+    {
+        $previousReading = MeterReading::where('client_id', $clientId)
+            ->beforeMonth($currentMonth)
+            ->completed()
+            ->latest()
+            ->first();
+
+        // Return the remaining_amount from the previous completed reading (can be negative for credit)
+        return $previousReading ? $previousReading->remaining_amount : 0;
+    }
 
     public function handleEnterKey($readingId, $value)
     {
@@ -187,16 +255,14 @@ class MeterReadings extends Component
 
     public function getNextMeterId($currentId)
     {
-        $readings = $this->loadMeterReadings();
-        $ids = $readings->pluck('id')->values();
+        $ids = $this->displayReadings->pluck('id')->values();
         $index = $ids->search($currentId);
         return $ids[$index + 1] ?? null;
     }
 
     public function getPrevMeterId($currentId)
     {
-        $readings = $this->loadMeterReadings();
-        $ids = $readings->pluck('id')->values();
+        $ids = $this->displayReadings->pluck('id')->values();
         $index = $ids->search($currentId);
         return $ids[$index - 1] ?? null;
     }
@@ -214,15 +280,13 @@ class MeterReadings extends Component
 
     public function render()
     {
-        $readings = $this->loadMeterReadings();
         $clients = $this->loadClientsForSearch();
-        $latestMonth = $readings->first()?->reading_for_month;
+        $latestMonth = $this->allReadings->first()?->reading_for_month;
         $arabicMonthName = $latestMonth ? $this->getArabicMonthName($latestMonth) : null;
 
         return view('livewire.meter-readings', [
-            'readings' => $readings,
             'clients' => $clients,
-            'arabicMonthName' => $arabicMonthName
+            'arabicMonthName' => $arabicMonthName,
         ]);
     }
 }

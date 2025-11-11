@@ -2,11 +2,12 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Client;
-use App\Models\MeterReading;
 use App\Models\Maintenance;
+use App\Models\MeterReading;
 use Illuminate\Support\Carbon;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Auth;
 
 class GenerateMonthlyMeterReadings extends Command
 {
@@ -16,11 +17,10 @@ class GenerateMonthlyMeterReadings extends Command
     public function handle()
     {
         $now = Carbon::now();
-        $targetMonth = $now->startOfMonth(); // e.g. October 1st
+        $targetMonth = $now->startOfMonth();
 
         $this->info("📅 Generating meter readings for {$targetMonth->format('F Y')}...");
-
-        // Fetch all active clients
+ 
         $clients = Client::where('is_active', true)->get();
 
         foreach ($clients as $client) {
@@ -36,30 +36,40 @@ class GenerateMonthlyMeterReadings extends Command
 
             $lastReading = MeterReading::latestForClient($client->id);
 
-            // Fallback values
+            // Get the previous meter reading
             $previousMeter = $lastReading?->current_meter ?? $client->initial_meter ?? 0;
-            $previousBalance = $lastReading?->remaining_amount ?? 0;
 
-            // Include all maintenance costs for this month created *before* the 28th
-            $maintenanceCosts = Maintenance::forClient($client->id)
-                ->forMonth($targetMonth)
-                ->whereRaw('DAY(created_at) < 28')
-                ->sum('amount');
+            // For offered clients, set everything to 0
+            if ($client->is_offered) {
+                $amount = 0;
+                $maintenanceCosts = 0;
+                $previousBalance = 0;
+                $remainingAmount = 0;
+            } else {
+                $amount = 0; // Will be calculated when meter is read
+                $maintenanceCosts = Maintenance::forClient($client->id)
+                    ->forMonth($targetMonth)
+                    ->whereRaw('DAY(created_at) < 28')
+                    ->sum('amount');
+                $previousBalance = 0; // TEMPORARY - will be calculated when meter is read
+                $remainingAmount = $maintenanceCosts; // Only maintenance for now
+            }
 
             // Create the new meter reading
             MeterReading::create([
                 'client_id' => $client->id,
                 'previous_meter' => $previousMeter,
                 'current_meter' => $previousMeter, // Starts equal to previous
-                'amount' => 0,
-                'maintenance_cost' => $maintenanceCosts?? 0,
+                'amount' => $amount,
+                'maintenance_cost' => $maintenanceCosts,
                 'previous_balance' => $previousBalance,
-                'remaining_amount' => $previousBalance + $maintenanceCosts,
+                'remaining_amount' => $remainingAmount,
                 'reading_date' => null,
                 'reading_for_month' => $targetMonth,
             ]);
 
-            $this->line("✅ Created reading for client #{$client->id} — Maintenance: {$maintenanceCosts}, Prev Meter: {$previousMeter}, Prev Balance: {$previousBalance}");
+            
+            $this->line("✅ Created meter reading for client #{$client->id} for {$targetMonth->format('F')}.");
         }
 
         $this->info('🎯 Monthly meter readings generated successfully.');

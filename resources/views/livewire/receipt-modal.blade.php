@@ -3,9 +3,9 @@
         <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" wire:ignore.self>
             <div class="modal-dialog modal-lg" dir="rtl">
                 <div class="modal-content">
-                    <div class="modal-header bg-success text-white">
+                    <div class="modal-header bg-light text-dark">
                         <h5 class="modal-title">
-                            <i class="bi bi-receipt me-2"></i>
+                            <i class="bi bi-receipt-cutoff text-success me-2"></i>
                             {{ $mode === 'bulk' ? 'إيصالات المشتركين غير المسددين' : 'إيصال الدفع' }}
                         </h5>
                         <button type="button" class="btn-close btn-close-white" wire:click="closeModal"></button>
@@ -13,13 +13,13 @@
 
                     <div class="modal-body" style="max-height:75vh; overflow-y:auto;">
                         
-                        {{-- ✅ SINGLE RECEIPT MODE --}}
+                        {{-- SINGLE RECEIPT MODE --}}
                         @if ($mode === 'single')
                             <div id="receipts-container">
                                 <x-combined-payment-receipt :receiptData="$receiptData" />
                             </div>
 
-                        {{-- ✅ BULK RECEIPTS MODE --}}
+                        {{-- BULK RECEIPTS MODE --}}
                         @elseif ($mode === 'bulk')
 
                             <!-- Search and Client Selection -->
@@ -66,7 +66,7 @@
                                 </div>
                             @endif
 
-                            {{-- 🧾 Receipts display --}}
+                            {{-- Receipts display --}}
                             @if (empty($receiptsData) || count($receiptsData) === 0)
                                 @if($search || $selectedClientId)
                                     {{-- No results for search --}}
@@ -83,7 +83,7 @@
                                 @else
                                     {{-- No unpaid clients at all --}}
                                     <div class="alert alert-info text-center">
-                                        ✅ جميع المشتركين قد سددوا هذا الشهر.
+                                         ا يوجد مشتركين لديهم مبالغ مستحقة
                                     </div>
                                 @endif
                             @else
@@ -121,7 +121,7 @@
                             ($mode === 'single' && !empty($receiptData)) ||
                             ($mode === 'bulk' && !empty($receiptsData) && count($receiptsData) > 0)
                         )
-                            <button type="button" onclick="printReceipts()" class="btn btn-primary">
+                            <button type="button" onclick="printReceipts()" class="btn btn-success">
                                 <i class="bi bi-printer me-2"></i>
                                 {{ $mode === 'bulk' ? 'طباعة جميع الإيصالات' : 'طباعة الإيصال' }}
                             </button>

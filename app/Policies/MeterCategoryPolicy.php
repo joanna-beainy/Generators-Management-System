@@ -9,15 +9,15 @@ use Illuminate\Auth\Access\Response;
 class MeterCategoryPolicy
 {
     /**
-     * Determine whether the user can view any models.
+     * Determine if the user can view any meter categories.
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true; // Users can view their own meter categories
     }
 
     /**
-     * Determine whether the user can view the model.
+     * Determine if the user can view the meter category.
      */
     public function view(User $user, MeterCategory $meterCategory): bool
     {
@@ -25,15 +25,15 @@ class MeterCategoryPolicy
     }
 
     /**
-     * Determine whether the user can create models.
+     * Determine if the user can create meter categories.
      */
     public function create(User $user): bool
     {
-        return true;
+        return true; // Users can create meter categories for themselves
     }
 
     /**
-     * Determine whether the user can update the model.
+     * Determine if the user can update the meter category.
      */
     public function update(User $user, MeterCategory $meterCategory): bool
     {
@@ -41,21 +41,16 @@ class MeterCategoryPolicy
     }
 
     /**
-     * Determine whether the user can delete the model.
+     * Determine if the user can delete the meter category.
      */
     public function delete(User $user, MeterCategory $meterCategory): bool
     {
-        return $meterCategory->user_id === $user->id && $meterCategory->clients()->count() === 0;
-    }
-
-    public function restore(User $user, MeterCategory $meterCategory): bool
-    {
-        return $user->is_admin === true;
-    }
-
-    public function forceDelete(User $user, MeterCategory $meterCategory): bool
-    {
-        return $user->is_admin === true;
+        // Check if category is being used by any clients
+        if ($meterCategory->clients()->exists()) {
+            return false; // Cannot delete if category has clients
+        }
+        
+        return $meterCategory->user_id === $user->id;
     }
 
 }

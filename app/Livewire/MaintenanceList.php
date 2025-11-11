@@ -1,17 +1,20 @@
 <?php
-
 namespace App\Livewire;
 
-use Livewire\Component;
+use Exception;
 use App\Models\Client;
+use Livewire\Component;
 use App\Models\Maintenance;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class MaintenanceList extends Component
 {
     public $clientId;
     public $client;
     public $maintenances;
+    public $alertMessage = null;
+    public $alertType = null;
 
     public function mount($clientId = null)
     {
@@ -19,6 +22,12 @@ class MaintenanceList extends Component
             $this->clientId = $clientId;
             $this->loadClientData();
         }
+    }
+
+    private function setAlert($message, $type = 'success')
+    {
+        $this->alertMessage = $message;
+        $this->alertType = $type;
     }
 
     public function loadClientMaintenance($clientId)
@@ -42,16 +51,25 @@ class MaintenanceList extends Component
 
     public function deleteMaintenance($maintenanceId)
     {
-        $maintenance = Maintenance::find($maintenanceId);
-        
-        if ($maintenance && $maintenance->belongsToUser(Auth::id())) {
-            try {
-                $maintenance->deleteWithAutoHandling();
-                session()->flash('success', 'تم حذف مصاريف الصيانة بنجاح');
-                $this->loadClientData(); // Refresh the list
-            } catch (\Exception $e) {
-                session()->flash('error', 'حدث خطأ أثناء الحذف: ' . $e->getMessage());
+        try {
+            $maintenance = Maintenance::find($maintenanceId);
+            
+            if (!$maintenance) {
+                $this->setAlert('لم يتم العثور على مصاريف الصيانة', 'danger');
+                return;
             }
+
+            // Check authorization using Policy with $this->authorize()
+            $this->authorize('delete', $maintenance);
+
+            $maintenance->deleteWithAutoHandling();
+            $this->setAlert('تم حذف مصاريف الصيانة بنجاح', 'success');
+            $this->loadClientData(); // Refresh the list
+
+        } catch (AuthorizationException $e) {
+            $this->setAlert('ليس لديك صلاحية لحذف مصاريف الصيانة هذه', 'danger');
+        } catch (Exception $e) {
+            $this->setAlert('حدث خطأ أثناء حذف مصاريف الصيانة', 'danger');
         }
     }
 

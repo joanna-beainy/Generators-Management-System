@@ -27,5 +27,10 @@ class ClientPolicy
     {
         return $user->id === $client->user_id;
     }
+
+    public function toggleActive(User $user, Client $client): bool
+    {
+        return $client->user_id === $user->id;
+    }
 }
 

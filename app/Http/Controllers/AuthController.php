@@ -12,6 +12,14 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
+        // If already authenticated, redirect to correct dashboard
+        if (Auth::check()) {
+            $user = Auth::user();
+            return $user->is_admin
+                ? redirect()->route('admin.dashboard')
+                : redirect()->route('users.dashboard');
+        }
+
         return view('auth.login');
     }
 
@@ -20,7 +28,9 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string',
             'password' => 'required|string',
-        ]);
+        ],
+        
+    );
 
         if (Auth::attempt($request->only('name', 'password'), $request->boolean('remember'))) {
             $request->session()->regenerate();
@@ -35,7 +45,7 @@ class AuthController extends Controller
         }
 
         throw ValidationException::withMessages([
-            'name' => ['The provided credentials do not match our records.'],
+            'name' => ['خطأ في كلمة السر أو الٳسم'],
         ]);
     }
 

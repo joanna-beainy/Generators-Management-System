@@ -24,7 +24,7 @@ class Client extends Model
 
     protected $appends = ['full_name'];
 
-    /** ✅ Safely generate full name even if some fields are null */
+    // Safely generate full name even if some fields are null 
     public function getFullNameAttribute(): string
     {
         return trim(collect([$this->first_name, $this->father_name, $this->last_name])
@@ -32,7 +32,7 @@ class Client extends Model
             ->implode(' '));
     }
 
-    // 🔗 Relationships
+    // Relationships
     public function generator()
     {
         return $this->belongsTo(Generator::class);
@@ -53,6 +53,12 @@ class Client extends Model
         return $this->hasMany(MeterReading::class);
     }
 
+    public function latestReading()
+    {
+        return $this->hasOne(MeterReading::class)->latestOfMany();
+    }
+
+
     public function payments()
     {
         return $this->hasMany(Payment::class);
@@ -63,15 +69,18 @@ class Client extends Model
         return $this->hasMany(Maintenance::class);
     }
 
-    // 🧮 Latest remaining amount from last reading
+    // Latest remaining amount from last reading where reading_date not null
     public function getTotalRemainingAmountAttribute(): float
     {
-        return $this->meterReadings()
-            ->latest('reading_for_month')
-            ->value('remaining_amount') ?? 0;
+        $latestReading = $this->meterReadings()
+            ->whereNotNull('reading_date')
+            ->orderByDesc('reading_for_month')
+            ->first();
+
+        return $latestReading ? (float)$latestReading->remaining_amount : 0.0;
     }
 
-    // 📘 Scopes
+    // Scopes
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
@@ -83,7 +92,7 @@ class Client extends Model
         return $query->where('is_offered', false);
     }
 
-    /** 🔍 Flexible search that tolerates missing name parts */
+    // Flexible search that tolerates missing name parts 
     public function scopeSearch($query, string $term)
     {
         $term = trim($term);
@@ -96,15 +105,15 @@ class Client extends Model
         $count = count($words);
 
         return $query->where(function ($q) use ($words, $count, $term) {
-            // 🔹 Always allow ID search
+            // Always allow ID search
             $q->where('id', $term);
 
-            // 🔹 Single word: first name partial
+            // Single word: first name partial
             if ($count === 1) {
                 $q->orWhere('first_name', 'like', "%{$words[0]}%");
             }
 
-            // 🔹 Two words: could be
+            // Two words: could be
             // (a) multi-word first name
             // (b) first + father/last
             elseif ($count === 2) {
@@ -118,7 +127,7 @@ class Client extends Model
                 });
             }
 
-            // 🔹 Three or more words
+            // Three or more words
             else {
                 $joined = implode(' ', $words);
 

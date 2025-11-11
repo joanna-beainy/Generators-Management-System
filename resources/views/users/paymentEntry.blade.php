@@ -1,10 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-
-    <div class="container mt-4">
-        @livewire('payment-entry')
-    </div>
+    @livewire('payment-entry')
 @section('scripts')
 @livewireScripts
 @endsection
