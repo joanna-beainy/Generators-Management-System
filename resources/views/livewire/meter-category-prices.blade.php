@@ -1,5 +1,5 @@
 <div class="d-flex justify-content-center">
-    <div class="card shadow-sm border-0 rounded-4 w-100" style="max-width: 950px;" dir="rtl">
+    <div class="card border-0 rounded-4 w-100" style="max-width: 950px;" dir="rtl">
         <div class="card-header bg-white text-center fw-bold rounded-top-4 py-3">
             <i class="bi bi-tags me-2 text-primary h4"></i>
             <span class="text-dark">فئات الاشتراك</span>

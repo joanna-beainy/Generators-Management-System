@@ -30,4 +30,9 @@ class Generator extends Model
         return $this->clients()->count();
     }
 
+    public function fuelConsumptions()
+    {
+        return $this->hasMany(FuelConsumption::class);
+    }
+
 }

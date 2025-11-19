@@ -1,5 +1,5 @@
 <div class="d-flex justify-content-center">
-    <div class="card shadow-sm border-0 rounded-4 mb-4 w-100" style="max-width: 750px;" dir="rtl">
+    <div class="card border-0 rounded-4 mb-4 w-100" style="max-width: 950px;" dir="rtl">
         <div class="card-header bg-white text-center fw-bold rounded-top-4 py-3">
             <i class="bi bi-lightning-fill me-2 text-warning h4"></i>
             <span class="text-dark">سعر الكيلووات</span>

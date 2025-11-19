@@ -78,4 +78,10 @@ class User extends Authenticatable
         return $this->hasOne(ExchangeRate::class);
     }
 
+    public function fuelPurchases()
+    {
+        return $this->hasMany(FuelPurchase::class);
+    }
+
+
 }

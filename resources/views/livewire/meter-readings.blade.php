@@ -1,4 +1,4 @@
-<div class="container mt-4" dir="rtl" 
+<div class="container mt-2" dir="rtl" 
     x-data="{
         focusMeterId: @entangle('focusMeterId'),
         
@@ -104,11 +104,11 @@
                     <div class="card bg-light">
                         <div class="card-body py-2">
                             <div class="row text-center fw-bold">
-                                <div class="col">
+                                <div class="col border-end">
                                     <div>إجمالي الاستهلاك</div>
                                     <div>{{ $displayReadings->sum('consumption') }} k.w</div>
                                 </div>
-                                <div class="col">
+                                <div class="col border-end">
                                     <div>إجمالي مبلغ هذا الشهر</div>
                                     <div>{{ number_format(
                                             $displayReadings
@@ -118,7 +118,7 @@
                                         ) }} $
                                     </div>
                                 </div>
-                                <div class="col">
+                                <div class="col border-end">
                                     <div>إجمالي الرصيد السابق</div>
                                     <div>{{ number_format(
                                             $displayReadings
@@ -146,7 +146,7 @@
 
             <!-- Readings Table -->
             @if($displayReadings->count())
-                <div class="table-responsive" style="max-height: 45vh; overflow-y: auto;">
+                <div class="table-responsive" style="max-height: 48vh; overflow-y: auto;">
                     <table class="table table-hover text-center align-middle">
                         <thead class="table-secondary" style="position: sticky; top: 0; z-index: 1;">
                             <tr>

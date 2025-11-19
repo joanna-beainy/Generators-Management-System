@@ -54,6 +54,12 @@ Route::middleware('auth')->group(function () {
     // Outstanding Amounts Report Route
     Route::get('/outstanding-amounts-report', [UserController::class, 'outstandingAmountsReport'])->name('outstanding.amounts.report');
 
+    //Fuel purchase Report Route
+    Route::get('/fuel-purchase-report', [UserController::class, 'fuelPurchaseReport'])->name('fuel.purchase.report');
+
+    //Fuel Consumption Report Route
+    Route::get('/fuel-consumption-report', [UserController::class, 'fuelConsumptionReport'])->name('fuel.consumption.report');
+
 });
 
 

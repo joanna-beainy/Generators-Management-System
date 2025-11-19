@@ -1,4 +1,4 @@
-<div class="container mt-4" dir="rtl">
+<div class="container mt-2" dir="rtl">
     <div class="card shadow-sm">
         <div class="card-header bg-light text-dark">
             <div class="d-flex justify-content-between align-items-center">
@@ -38,7 +38,7 @@
             @if($client)
                 @if($maintenances->count() > 0)
                     <!-- Maintenance Records Table -->
-                    <div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">
+                    <div class="table-responsive" style="max-height: 72vh; overflow-y: auto;">
                         <table class="table table-striped table-hover text-center align-middle">
                             <thead class="table-secondary" style="position: sticky; top: 0; z-index: 1;">
                                 <tr>

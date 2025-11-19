@@ -3,7 +3,7 @@
 @section('title', 'إدارة الأسعار')
 
 @section('content')
-<div class="container py-3" dir="rtl">
+<div class="container mt-2 mb-3" dir="rtl">
     <div class="card shadow-sm">
         <div class="card-header bg-light text-dark">
             <div class="d-flex justify-content-between align-items-center">
@@ -25,7 +25,7 @@
                 @livewire('kilowatt-price-manager')
             </div>
 
-            <div class="mb-4">
+            <div >
                 @livewire('meter-category-prices')
             </div>
         </div>

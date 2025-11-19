@@ -3,7 +3,10 @@
     <div class="modal-dialog modal-md modal-dialog-centered" role="document">
         <div class="modal-content shadow rounded-4">
             <div class="modal-header">
-                <h5 class="modal-title">إضافة مولد جديد</h5>
+                <h5 class="modal-title">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    إضافة مولد جديد
+                </h5>
                 <button type="button" class="btn-close" wire:click="toggleAddForm"></button>
             </div>
             <div class="modal-body">

@@ -1,4 +1,4 @@
-<div class="container mt-4" dir="rtl" x-data>
+<div class="container mt-2" dir="rtl" x-data>
     <div class="card shadow-sm">
         <div class="card-header bg-light text-dark no-print">
             <div class="d-flex justify-content-between align-items-center">
@@ -74,19 +74,19 @@
                         <div class="card bg-light">
                             <div class="card-body py-2">
                                 <div class="row text-center fw-bold">
-                                    <div class="col">
+                                    <div class="col border-end">
                                         <div>إجمالي الاستهلاك</div>
                                         <div>{{ $statistics['total_consumption'] }} k.w</div>
                                     </div>
-                                    <div class="col">
+                                    <div class="col border-end">
                                         <div>إجمالي مبلغ هذا الشهر</div>
                                         <div>{{ number_format($statistics['total_amount'], 2) }} $</div>
                                     </div>
-                                    <div class="col">
+                                    <div class="col border-end">
                                         <div>إجمالي تكلفة الصيانة</div>
                                         <div>{{ number_format($statistics['total_maintenance_cost'], 2) }} $</div>
                                     </div>
-                                    <div class="col">
+                                    <div class="col border-end">
                                         <div>إجمالي الرصيد السابق</div>
                                         <div>{{ number_format($statistics['total_previous_balance'], 2) }} $</div>
                                     </div>
@@ -101,7 +101,7 @@
                 </div>
 
                 <!-- Table -->
-                <div class="table-responsive">
+                <div class="table-responsive" style="max-height: 48vh; overflow-y: auto;">
                     <table class="table table-bordered text-center align-middle" id="report-table">
                         <thead class="table-light print-table-header">
                             <tr>

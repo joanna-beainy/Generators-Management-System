@@ -3,12 +3,12 @@
         <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" wire:ignore.self>
             <div class="modal-dialog modal-lg" dir="rtl">
                 <div class="modal-content">
-                    <div class="modal-header bg-light text-dark">
+                    <div class="modal-header bg-light">
                         <h5 class="modal-title">
                             <i class="bi bi-receipt-cutoff text-success me-2"></i>
                             {{ $mode === 'bulk' ? 'إيصالات المشتركين غير المسددين' : 'إيصال الدفع' }}
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" wire:click="closeModal"></button>
+                        <button type="button" class="btn-close" wire:click="closeModal"></button>
                     </div>
 
                     <div class="modal-body" style="max-height:75vh; overflow-y:auto;">

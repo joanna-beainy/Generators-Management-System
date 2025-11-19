@@ -77,4 +77,12 @@ class UserController extends Controller
     public function outstandingAmountsReport(){
         return view('users.OutstandingAmountsReport');
     }
+
+    public function fuelPurchaseReport(){
+        return view('users.FuelPurchasesReport');
+    }
+
+    public function fuelConsumptionReport(){
+        return view('users.FuelConsumptionsReport');
+    }
 }

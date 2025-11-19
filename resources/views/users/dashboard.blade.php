@@ -62,17 +62,19 @@
                 <div class="row row-cols-1 row-cols-md-3 g-3" dir="rtl">
                     @php
                         $buttons = [
+                            ['label' => 'إدخال دفعات', 'route' => 'payment.entry', 'icon' => 'bi-wallet2'],
                             ['label' => 'إدخال العدادات', 'route' => 'meter.readings', 'icon' => 'bi-speedometer2'],
-                            ['label' => 'إدخال الأسعار', 'route' => 'manage.prices', 'icon' => 'bi-cash-stack'],
                             ['label' => 'عرض لائحة المشتركين و تعديلها', 'route' => 'clients.index', 'icon' => 'bi-people'],
+                            ['label' => 'إدخال مشترك', 'route' => 'clients.create', 'icon' => 'bi-person-plus'],
+                            ['label' => 'إدخال الأسعار', 'route' => 'manage.prices', 'icon' => 'bi-cash-stack'],
+                            ['label' => 'تقرير شهري لقراءة العدادات', 'route' => 'meter-reading.form-report', 'icon' => 'bi-speedometer'],
                             ['label' => 'تقرير شهري للمشتركين', 'route' => 'meter-readings.monthly-report', 'icon' => 'bi-file-earmark-text'],
                             ['label' => 'تقرير تحصيل شهري', 'route' => 'monthly.payment.report', 'icon' => 'bi-coin'],
-                            ['label' => 'تقرير شهري لقراءة العدادات', 'route' => 'meter-reading.form-report', 'icon' => 'bi-speedometer'],
-                            ['label' => 'إدخال مشترك', 'route' => 'clients.create', 'icon' => 'bi-person-plus'],
-                            ['label' => 'إدخال دفعات', 'route' => 'payment.entry', 'icon' => 'bi-wallet2'],
-                            ['label' => 'إدخال صيانة', 'route' => 'maintenance.entry', 'icon' => 'bi-tools'],
-                            ['label' => 'عرض المولدات', 'route' => 'manage.generators', 'icon' => 'bi-lightning'],                            
+                            ['label' => ' المولدات و الصيانة', 'route' => 'manage.generators', 'icon' => 'bi-lightning'],                            
+                            ['label' => 'إدخال صيانة للمشترك', 'route' => 'maintenance.entry', 'icon' => 'bi-tools'],
                             ['label' => 'تقرير عن المبالغ المستحقة', 'route' => 'outstanding.amounts.report', 'icon' => 'bi-currency-dollar'],
+                            ['label' => 'تقرير شراء/استهلاك الوقود ', 'route' => 'fuel.purchase.report', 'icon' => 'bi-fuel-pump-diesel'],                           
+
                         ];
                     @endphp
 
@@ -86,15 +88,6 @@
                         </div>
                     @endforeach
 
-                    <!-- تعديل سعر الصرف -->
-                    <div class="col">
-                        <button type="button" 
-                                onclick="Livewire.dispatch('openExchangeRateModal')"
-                                class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-currency-exchange"></i>
-                            <span>تعديل سعر الصرف</span>
-                        </button>
-                    </div>
 
                     <!-- عرض مصاريف الصيانة -->
                     <div class="col">
@@ -116,6 +109,26 @@
                         </button>
                     </div>
 
+                    <!-- تعديل سعر الصرف -->
+                    <div class="col">
+                        <button type="button" 
+                                onclick="Livewire.dispatch('openExchangeRateModal')"
+                                class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-currency-exchange"></i>
+                            <span>تعديل سعر الصرف</span>
+                        </button>
+                    </div>
+
+                     <!-- عرض العداد الموافق لكل مشترك -->
+                    <div class="col">
+                        <button type="button" 
+                                onclick="Livewire.dispatch('openClientSearch', { actionType: 'view-meter' })"
+                                class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>عرض العداد الموافق لكل مشترك</span>
+                        </button>
+                    </div>
+
                     <!-- طباعة إيصال مشترك -->
                     <div class="col">
                         <button type="button" 
@@ -125,16 +138,7 @@
                             <span>طباعة إيصال مشترك</span>
                         </button>
                     </div>
-
-                    <!-- عرض العداد الموافق لكل مشترك -->
-                    <div class="col">
-                        <button type="button" 
-                                onclick="Livewire.dispatch('openClientSearch', { actionType: 'view-meter' })"
-                                class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-speedometer2"></i>
-                            <span>عرض العداد الموافق لكل مشترك</span>
-                        </button>
-                    </div>
+                    
                 </div>
             </div>
         </div>

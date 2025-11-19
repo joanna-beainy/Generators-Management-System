@@ -1,4 +1,4 @@
-<div class="container mt-4" dir="rtl" x-data>
+<div class="container mt-2" dir="rtl" x-data>
     <div class="card shadow-sm">
         <div class="card-header bg-light text-dark no-print">
             <div class="d-flex justify-content-between align-items-center">
@@ -48,7 +48,7 @@
             </div>
 
             @if(count($clients))
-                <div class="table-responsive" >
+                <div class="table-responsive" style="max-height: 73vh; overflow-y: auto;">
                     <table class="table table-bordered text-center align-middle">
                         <thead class="table-light print-table-header">
                             <tr>
