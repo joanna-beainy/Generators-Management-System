@@ -60,6 +60,9 @@ Route::middleware('auth')->group(function () {
     //Fuel Consumption Report Route
     Route::get('/fuel-consumption-report', [UserController::class, 'fuelConsumptionReport'])->name('fuel.consumption.report');
 
+    // Generators Maintenance Report Route
+    Route::get('/generators-maintenance-report', [UserController::class, 'generatorsMaintenanceReport'])->name('generators.maintenance.report');
+
 });
 
 

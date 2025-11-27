@@ -27,6 +27,10 @@
                     wire:click="toggleAddForm">
                 <i class="bi bi-plus-circle me-1"></i>إضافة مولد جديد
             </button>
+            <a href="{{ route('generators.maintenance.report') }}" class="btn btn-success rounded-pill shadow-sm px-4">
+                <i class="bi bi-tools me-1"></i>
+                صيانة المولدات
+            </a>
             <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary rounded-pill shadow-sm px-4">
                 <i class="bi bi-house me-1"></i>
                 إغلاق

@@ -85,4 +85,8 @@ class UserController extends Controller
     public function fuelConsumptionReport(){
         return view('users.FuelConsumptionsReport');
     }
+
+    public function generatorsMaintenanceReport(){
+        return view('users.GeneratorsMaintenance');
+    }
 }
