@@ -66,12 +66,3 @@ Route::middleware('auth')->group(function () {
 });
 
 
-Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
-    Route::get('/users/create', [AdminController::class, 'create'])->name('users.create');
-    Route::post('/users/create', [AdminController::class, 'store'])->name('users.store');
-    Route::delete('/users/{user}', [AdminController::class, 'destroy'])->name('users.destroy');
-    Route::post('/users/{user}/restore', [AdminController::class, 'restore'])->name('users.restore');
-    Route::delete('/users/{user}/force-delete', [AdminController::class, 'forceDelete'])->name('users.forceDelete');
-});
-

@@ -12,12 +12,9 @@ class AuthController extends Controller
 {
     public function showLogin()
     {
-        // If already authenticated, redirect to correct dashboard
+        // If already authenticated, redirect to dashboard
         if (Auth::check()) {
-            $user = Auth::user();
-            return $user->is_admin
-                ? redirect()->route('admin.dashboard')
-                : redirect()->route('users.dashboard');
+            redirect()->route('users.dashboard');
         }
 
         return view('auth.login');
@@ -28,18 +25,13 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string',
             'password' => 'required|string',
-        ],
-        
-    );
+            ],
+        );
 
         if (Auth::attempt($request->only('name', 'password'), $request->boolean('remember'))) {
             $request->session()->regenerate();
 
             $user = Auth::user();
-
-            if ($user->is_admin) {
-                return redirect()->route('admin.dashboard');
-            }
 
             return redirect()->route('users.dashboard');
         }

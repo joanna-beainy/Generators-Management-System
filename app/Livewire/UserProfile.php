@@ -9,7 +9,6 @@ use Illuminate\Validation\ValidationException;
 
 class UserProfile extends Component
 {
-    public $name;
     public $password;
     public $password_confirmation;
     public $phoneNumbers = [];
@@ -20,7 +19,6 @@ class UserProfile extends Component
     public function mount()
     {
         $user = Auth::user();
-        $this->name = $user->name;
         $this->phoneNumbers = $user->phoneNumbers->pluck('phone_number', 'id')->toArray();
     }
 
@@ -33,25 +31,23 @@ class UserProfile extends Component
     public function updateProfile()
     {
         $this->validate([
-            'name' => 'required|string|max:255',
             'password' => 'nullable|string|min:6|confirmed',
         ], [
-            // Arabic validation messages
-            'name.required' => 'يرجى ٳدخال اللأسم.',
             'password.min' => 'يجب أن تكون كلمة المرور 6 أحرف على الأقل.',
             'password.confirmed' => 'تأكيد كلمة المرور غير مطابق.',
         ]);
 
         try {
             $user = Auth::user();
-            $user->name = $this->name;
             if ($this->password) {
                 $user->password = Hash::make($this->password);
+                $user->save();
+                
+                $this->setAlert('تم تحديث كلمة المرور بنجاح.', 'success');
+                $this->reset(['password', 'password_confirmation']);
+            } else {
+                $this->setAlert('لم يتم إجراء أي تغييرات.', 'info');
             }
-            $user->save();
-
-            $this->setAlert('تم تحديث المعلومات بنجاح.', 'success');
-            $this->reset(['password', 'password_confirmation']);
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {

@@ -31,26 +31,25 @@
                 </div>
             @endif
 
-            <!-- Update Name & Password -->
+            <!-- Display Current Username (Read-only) -->
+            <div class="mb-4 p-3 bg-light rounded">
+                <div class="h6 text-dark">الٳسم: {{ Auth::user()->name }}</div>
+            </div>
+
+            <!-- Update Password Only -->
             <form wire:submit.prevent="updateProfile" class="mb-4">
                 <div class="mb-3">
-                    <label class="form-label fw-bold">الاسم</label>
-                    <input type="text" wire:model.defer="name" class="form-control @error('name') is-invalid @enderror">
-                    @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="mb-3">
                     <label class="form-label fw-bold">كلمة المرور الجديدة</label>
-                    <input type="password" wire:model.defer="password" class="form-control @error('password') is-invalid @enderror">
+                    <input type="password" wire:model.defer="password" class="form-control @error('password') is-invalid @enderror" >
                     @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label fw-bold">تأكيد كلمة المرور</label>
-                    <input type="password" wire:model.defer="password_confirmation" class="form-control">
+                    <input type="password" wire:model.defer="password_confirmation" class="form-control" placeholder="أعد إدخال كلمة المرور الجديدة">
                 </div>
 
-                <button type="submit" class="btn btn-success px-4">تحديث المعلومات</button>
+                <button type="submit" class="btn btn-success px-4">تحديث كلمة المرور</button>
             </form>
 
             <hr>
@@ -64,7 +63,7 @@
                 @error('newPhone') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
             </div>
 
-            @if ($phoneNumbers)
+            @if (count($phoneNumbers) > 0)
                 <ul class="list-group">
                     @foreach ($phoneNumbers as $id => $number)
                         <li class="list-group-item d-flex justify-content-between align-items-center">
