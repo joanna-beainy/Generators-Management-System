@@ -8,6 +8,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ConfirmPasswordController;
 
 
 Route::middleware('guest')->group(function () {
@@ -33,7 +34,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/clients/create', [UserController::class, 'createClient'])->name('clients.create');
 
     // Meter Readings Route
-    Route::get('/meter-readings', [UserController::class, 'meterReadings'])->name('meter.readings');
+    Route::get('/meter-readings', [UserController::class, 'meterReadings'])->middleware('password.confirm')->name('meter.readings');
     Route::get('/client-meter-readings/{clientId}', [UserController::class, 'clientMeterReadings'])->name('client.meter.readings');
 
     // Payments Route
@@ -46,7 +47,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/maintenance-list/{clientId}', [UserController::class, 'maintenanceList'])->name('maintenance.list');
 
     // Monthly Client Report Route
-    Route::get('/monthly-client-report', [UserController::class, 'monthlyClientReport'])->name('meter-readings.monthly-report');
+    Route::get('/monthly-meter-readings-report', [UserController::class, 'monthlyClientReport'])->name('meter-readings.monthly-report');
 
     // Meter Reading Form Report Route
     Route::get('/meter-reading-form-report', [UserController::class, 'meterReadingFormReport'])->name('meter-reading.form-report');
@@ -62,6 +63,11 @@ Route::middleware('auth')->group(function () {
 
     // Generators Maintenance Report Route
     Route::get('/generators-maintenance-report', [UserController::class, 'generatorsMaintenanceReport'])->name('generators.maintenance.report');
+
+    Route::get('/confirm-password', [ConfirmPasswordController::class, 'show'])->name('password.confirm');
+
+    Route::post('/confirm-password', [ConfirmPasswordController::class, 'store']);
+
 
 });
 

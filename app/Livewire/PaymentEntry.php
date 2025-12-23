@@ -26,7 +26,7 @@ class PaymentEntry extends Component
 
     protected $rules = [
         'selectedClientId' => 'required|exists:clients,id',
-        'amount' => 'required|numeric|min:0.01',
+        'amount' => 'required|numeric|min:0.50',
         'discount' => 'nullable|numeric|min:0',
     ];
 

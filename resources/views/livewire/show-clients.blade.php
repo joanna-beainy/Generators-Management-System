@@ -1,10 +1,9 @@
-<div class="container" dir="rtl">
-    <!-- Alpine.js Auto-Disappearing Alert -->
+<div class="container" dir="rtl" x-data="{ editModalOpen: @entangle('showEditModal'), editingClientId: null, modalLoading: false }">    <!-- Alpine.js Auto-Disappearing Alert -->
     @if ($alertMessage)
         <div 
             x-data="{ show: true }" 
             x-show="show" 
-            x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
+            x-init="setTimeout(() => { show = false, $wire.set('alertMessage', null) }, 5000)" 
             x-transition:leave="transition ease-in duration-300"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
@@ -124,7 +123,7 @@
                                                        wire:click="toggleActive({{ $client->id }})"
                                                        {{ $client->is_active ? 'checked' : '' }}>
                                             </div>
-                                            <button wire:click="editClient({{ $client->id }})" 
+                                            <button @click="editingClientId = {{ $client->id }}; editModalOpen = true; modalLoading = true; $wire.call('editClient', {{ $client->id }}).then(() => { modalLoading = false })"
                                                     class="btn btn-sm btn-outline-primary rounded-pill px-3"
                                                     title="تعديل البيانات">
                                                 <i class="bi bi-pencil"></i>

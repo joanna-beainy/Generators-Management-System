@@ -2,12 +2,13 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
+use Exception;
+use Carbon\Carbon;
 use App\Models\Client;
 use App\Models\Payment;
+use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
-use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
 
 class PaymentHistory extends Component
 {
@@ -58,7 +59,7 @@ class PaymentHistory extends Component
             // Check if user can view payments for this client
             $this->authorize('viewAny', Payment::class);
 
-        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+        } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض دفعات هذا المشترك', 'danger');
             $this->client = null;
         } catch (Exception $e) {

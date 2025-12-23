@@ -124,7 +124,8 @@
                                         <input type="number" 
                                                wire:model.live="amount" 
                                                class="form-control @error('amount') is-invalid @enderror" 
-                                               step="0.01" 
+                                               step="0.50" 
+                                               min="0.50"
                                                placeholder="0.00"
                                                required
                                                style="text-align: left;">
@@ -147,7 +148,8 @@
                                         <input type="number" 
                                                wire:model.live="discount" 
                                                class="form-control @error('discount') is-invalid @enderror" 
-                                               step="0.01" 
+                                               step="0.50" 
+                                               min="0"
                                                placeholder="0.00"
                                                style="text-align: left;">
                                         <span class="input-group-text">$</span>
@@ -201,7 +203,7 @@
                 @endif
             @else
                 <!-- No Client Selected State -->
-                <div class="text-center py-5">
+                <div class="alert alert-light border text-center shadow-sm rounded-3 py-5">
                     @if($search && $clients->isEmpty())
                         <div class="alert alert-warning border-0">
                             <i class="bi bi-exclamation-triangle me-2"></i>
@@ -209,7 +211,7 @@
                         </div>
                     @elseif(!$search && $clients->isEmpty())
                         <div class="alert alert-info border-0">
-                            <i class="bi bi-check-circle me-2"></i>
+                            <i class="bi bi-check-circle me-2 text-success"></i>
                             لا يوجد مشتركين حتى الآن
                         </div>
                     @else

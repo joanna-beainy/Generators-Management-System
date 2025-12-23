@@ -45,7 +45,7 @@
     {{-- Generator Table --}}
     @if($generators->isEmpty())
         <div class="alert alert-light border text-center shadow-sm rounded-3 py-3">
-            <i class="bi bi-info-circle me-2"></i> لا يوجد مولدات حتى الآن.
+            <i class="bi bi-info-circle text-success me-2"></i> لا يوجد مولدات حتى الآن.
         </div>
     @else
         <div class="card-body">

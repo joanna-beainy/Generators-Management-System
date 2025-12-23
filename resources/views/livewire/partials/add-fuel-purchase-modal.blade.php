@@ -27,7 +27,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label fw-bold">السعر الإجمالي ($) <span class="text-danger">*</span></label>
-                                <input type="number" step="0.01" style="text-align: right;" class="form-control" wire:model="total_price" placeholder="0.00" min="0.01">
+                                <input type="number" step="0.50" style="text-align: right;" class="form-control" wire:model="total_price" placeholder="0.00" min="0.01">
                                 @error('total_price') <span class="text-danger small">{{ $message }}</span> @enderror
                             </div>
                         </div>

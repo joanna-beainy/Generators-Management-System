@@ -103,8 +103,8 @@
                                     <input type="number" 
                                            wire:model="amount" 
                                            class="form-control @error('amount') is-invalid @enderror" 
-                                           step="0.01" 
-                                           min="0.01"
+                                           step="0.50" 
+                                           min="0.50"
                                            placeholder="0.00"
                                            required
                                            style="text-align: right;">

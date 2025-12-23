@@ -209,7 +209,7 @@ class ReceiptModal extends Component
                 if (!$latestReading) return null;
 
                 $kilowattPrice = $client->user->kilowattPrice->price ?? 0;
-                $consumptionAmount = $latestReading->consumption * $kilowattPrice;
+                $consumptionAmount = round($latestReading->consumption * $kilowattPrice * 2) / 2;  // round amounts to the nearest 0.5 (half dollar)
                 $readingMonth = $latestReading->reading_for_month ?? now();
                 $arabicMonth = $this->getArabicMonthName($readingMonth);
 
@@ -260,7 +260,7 @@ class ReceiptModal extends Component
             }
 
             $kilowattPrice = $client->user->kilowattPrice->price ?? 0;
-            $consumptionAmount = $latestReading->consumption * $kilowattPrice;
+            $consumptionAmount = round($latestReading->consumption * $kilowattPrice * 2) / 2;  // round amounts to the nearest 0.5 (half dollar)
             $readingMonth = $latestReading->reading_for_month;
             $arabicMonth = $this->getArabicMonthName($readingMonth);
             $amountPaid = $payment->amount + $payment->discount;

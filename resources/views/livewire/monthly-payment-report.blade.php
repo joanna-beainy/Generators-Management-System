@@ -129,7 +129,7 @@
                     </div>
                 @else
                     <div class="text-center py-5 text-muted">
-                        <i class="bi bi-cash-coin display-4 text-muted mb-3"></i>
+                        <i class="bi bi-cash-coin display-4 text-success mb-3"></i>
                         <h5>لا توجد دفعات في هذه الفترة</h5>
                     </div>
                 @endif

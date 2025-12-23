@@ -139,9 +139,12 @@ class MonthlyMeterReadingsReport extends Component
     public function getStatistics()
     {
         $regularClients = $this->readings->filter(fn($r) => !$r->client->is_offered);
+        $offeredClients  = $this->readings->filter(fn($r) => $r->client->is_offered);
         
         return [
-            'total_consumption' => $this->readings->sum('consumption'),
+            'consumption_offered' => $offeredClients->sum('consumption'),
+            'consumption_regular' => $regularClients->sum('consumption'),
+
             'total_amount' => $regularClients->sum('amount'),
             'total_previous_balance' => $regularClients->sum('previous_balance'),
             'total_maintenance_cost' => $regularClients->sum('maintenance_cost'),

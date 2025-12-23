@@ -32,7 +32,7 @@ class FuelPurchasesReport extends Component
     protected $rules = [
         'company' => 'required|string|max:255',
         'liters_purchased' => 'required|integer|min:1',
-        'total_price' => 'required|numeric|min:0.01',
+        'total_price' => 'required|numeric|min:0.50',
         'description' => 'nullable|string',
     ];
 
@@ -43,7 +43,7 @@ class FuelPurchasesReport extends Component
         'liters_purchased.min' => 'يجب أن تكون اللترات المشتراة على الأقل 1.',
         'total_price.required' => 'يرجى إدخال السعر الإجمالي.',
         'total_price.numeric' => 'يرجى إدخال رقم صالح للسعر الإجمالي.',
-        'total_price.min' => 'يجب أن يكون السعر الإجمالي على الأقل 0.01.',
+        'total_price.min' => 'يجب أن يكون السعر الإجمالي على الأقل 0.50.',
     ];
 
     public function mount()

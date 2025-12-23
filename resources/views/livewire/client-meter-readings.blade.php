@@ -104,7 +104,7 @@
                     </div>
                 @else
                     <div class="text-center py-5">
-                        <i class="bi bi-speedometer2 display-4 text-muted mb-3"></i>
+                        <i class="bi bi-speedometer2 display-4 text-success mb-3"></i>
                         <h5 class="text-muted">لا توجد قراءات مسجلة</h5>
                         <p class="text-muted">لم يتم إدخال أي قراءات لهذا المشترك في الفترة المحددة</p>
                     </div>

@@ -82,27 +82,28 @@
                     </div>
                 </div>
 
-                <!-- Period Statistics -->
-                <div class="row mb-4 no-print">
-                    <div class="col-md-12">
-                        <div class="card bg-light">
-                            <div class="card-body py-2">
-                                <div class="row text-center fw-bold">
-                                    <div class="col border-end">
-                                        <div>إجمالي اللترات المشتراة</div>
-                                        <div>{{ number_format($purchases->sum('liters_purchased')) }} لتر</div>
-                                    </div>
-                                    <div class="col">
-                                        <div>المبلغ المنفق</div>
-                                        <div>{{ number_format($purchases->sum('total_price'), 2) }} $</div>
+            
+                @if($purchases->count() > 0)
+                    <!-- Period Statistics -->
+                    <div class="row mb-4 no-print">
+                        <div class="col-md-12">
+                            <div class="card bg-light">
+                                <div class="card-body py-2">
+                                    <div class="row text-center fw-bold">
+                                        <div class="col border-end">
+                                            <div>إجمالي اللترات المشتراة</div>
+                                            <div>{{ number_format($purchases->sum('liters_purchased')) }} لتر</div>
+                                        </div>
+                                        <div class="col">
+                                            <div>المبلغ المنفق</div>
+                                            <div>{{ number_format($purchases->sum('total_price'), 2) }} $</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                @if($purchases->count() > 0)
                     <!-- Purchases Table -->
                     <div class="table-responsive" style="max-height: 38vh; overflow-y: auto;">
                         <table class="table text-center align-middle">
@@ -142,7 +143,7 @@
                     </div>
                 @else
                     <div class="text-center py-5 text-muted">
-                        <i class="bi bi-fuel-pump display-4 text-muted mb-3"></i>
+                        <i class="bi bi-fuel-pump display-4 text-success mb-3"></i>
                         <h5>لا توجد مشتريات وقود في هذه الفترة</h5>
                         @if($totalAvailableLiters > 0)
                             <p class="text-success mt-2">

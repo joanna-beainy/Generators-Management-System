@@ -39,7 +39,7 @@
                 <button type="button" class="btn btn-outline-secondary" wire:click="cancelPayment">
                     <i class="fas fa-times me-1"></i> إلغاء
                 </button>
-                <button type="button" class="btn btn-primary" wire:click="confirmPayment">
+                <button type="button" class="btn btn-success" wire:click="confirmPayment">
                     <i class="fas fa-check me-1"></i> تأكيد الدفعة
                 </button>
             </div>

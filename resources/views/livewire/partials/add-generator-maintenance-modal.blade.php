@@ -23,7 +23,7 @@
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold">المبلغ ($) <span class="text-danger">*</span></label>
-                        <input type="number" step="0.01" class="form-control" style="text-align: right;" wire:model="amount" placeholder="0.00" min="0.01">
+                        <input type="number" step="0.50" class="form-control" style="text-align: right;" wire:model="amount" placeholder="0.00" min="0.01">
                         @error('amount') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
                     

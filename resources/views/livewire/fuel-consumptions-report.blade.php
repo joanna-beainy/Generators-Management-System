@@ -74,29 +74,30 @@
                     </div>
                 </div>
 
-                <!-- Statistics -->
-                <div class="row mb-4">
-                    <div class="col-md-12">
-                        <div class="card bg-light">
-                            <div class="card-body py-2">
-                                <div class="row text-center fw-bold">
-                                    <div class="col">
-                                        <div>إجمالي اللترات المستهلكة</div>
-                                        <div>{{ number_format($consumptions->sum('liters_consumed')) }} لتر</div>
+
+                @if($consumptions->count() > 0)
+                    <!-- Statistics -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card bg-light">
+                                <div class="card-body py-2">
+                                    <div class="row text-center fw-bold">
+                                        <div class="col">
+                                            <div>إجمالي اللترات المستهلكة</div>
+                                            <div>{{ number_format($consumptions->sum('liters_consumed')) }} لتر</div>
+                                        </div>
+                                        @if($selectedGenerator !== 'all')
+                                        <div class="col">
+                                            <div>المولد المحدد</div>
+                                            <div>{{ $generators->where('id', $selectedGenerator)->first()->name ?? '' }}</div>
+                                        </div>
+                                        @endif
                                     </div>
-                                    @if($selectedGenerator !== 'all')
-                                    <div class="col">
-                                        <div>المولد المحدد</div>
-                                        <div>{{ $generators->where('id', $selectedGenerator)->first()->name ?? '' }}</div>
-                                    </div>
-                                    @endif
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                @if($consumptions->count() > 0)
                     <!-- Consumptions Table -->
                     <div class="table-responsive" style="max-height: 48vh; overflow-y: auto;">
                         <table class="table text-center align-middle">
@@ -136,7 +137,7 @@
                     </div>
                 @else
                     <div class="text-center py-5 text-muted">
-                        <i class="bi bi-droplet display-4 text-muted mb-3"></i>
+                        <i class="bi bi-droplet display-4 text-success mb-3"></i>
                         <h5>لا توجد عمليات استهلاك وقود في هذه الفترة</h5>
                         @if($selectedGenerator !== 'all')
                             <p class="text-muted">للمولد المحدد: {{ $generators->where('id', $selectedGenerator)->first()->name ?? '' }}</p>

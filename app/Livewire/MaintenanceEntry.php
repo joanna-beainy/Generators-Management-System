@@ -23,7 +23,7 @@ class MaintenanceEntry extends Component
 
     protected $rules = [
         'selectedClientId' => 'required|exists:clients,id',
-        'amount' => 'required|numeric|min:0.01',
+        'amount' => 'required|numeric|min:0.50',
         'description' => 'nullable|string|max:200',
     ];
 

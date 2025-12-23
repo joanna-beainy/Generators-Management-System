@@ -15,6 +15,7 @@
                     });
                 }
             });
+
         }
     }">
     
@@ -98,54 +99,58 @@
                 </div>
             @endif
 
-            <!-- Statistics (Screen Only) -->
-            <div class="row mb-4 no-print">
-                <div class="col-md-12">
-                    <div class="card bg-light">
-                        <div class="card-body py-2">
-                            <div class="row text-center fw-bold">
-                                <div class="col border-end">
-                                    <div>إجمالي الاستهلاك</div>
-                                    <div>{{ $displayReadings->sum('consumption') }} k.w</div>
-                                </div>
-                                <div class="col border-end">
-                                    <div>إجمالي مبلغ هذا الشهر</div>
-                                    <div>{{ number_format(
-                                            $displayReadings
-                                                ->filter(fn($r) => !$r->client->is_offered)
-                                                ->sum('amount'),
-                                            2
-                                        ) }} $
+            <!-- Readings Table -->
+            @if($displayReadings->count())
+                <!-- Statistics (Screen Only) -->
+                <div class="row mb-4 no-print">
+                    <div class="col-md-12">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <div class="row text-center fw-bold">
+                                    <div class="col border-end">
+                                        <div>إجمالي التقدمة</div>
+                                        <div>{{ $displayReadings->filter(fn($r) => $r->client->is_offered)->sum('consumption') }} k.w</div>
+                                   </div>
+                                    <div class="col border-end">
+                                        <div>إجمالي الاستهلاك</div>
+                                        <div>{{ $displayReadings->filter(fn($r) => !$r->client->is_offered)->sum('consumption') }} k.w</div>
+                                   </div>
+                                    <div class="col border-end">
+                                        <div>إجمالي مبلغ هذا الشهر</div>
+                                        <div>{{ number_format(
+                                                $displayReadings
+                                                    ->filter(fn($r) => !$r->client->is_offered)
+                                                    ->sum('amount'),
+                                                2
+                                            ) }} $
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="col border-end">
-                                    <div>إجمالي الرصيد السابق</div>
-                                    <div>{{ number_format(
-                                            $displayReadings
-                                                ->filter(fn($r) => !$r->client->is_offered)
-                                                ->sum('previous_balance'),
-                                            2
-                                        ) }} $
+                                    <div class="col border-end">
+                                        <div>إجمالي الرصيد السابق</div>
+                                        <div>{{ number_format(
+                                                $displayReadings
+                                                    ->filter(fn($r) => !$r->client->is_offered)
+                                                    ->sum('previous_balance'),
+                                                2
+                                            ) }} $
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="col">
-                                    <div>إجمالي المبلغ المستحق</div>
-                                    <div>{{ number_format(
-                                            $displayReadings
-                                                ->filter(fn($r) => !$r->client->is_offered)
-                                                ->sum('total_due'),
-                                            2
-                                        ) }} $
+                                    <div class="col">
+                                        <div>إجمالي المبلغ المستحق</div>
+                                        <div>{{ number_format(
+                                                $displayReadings
+                                                    ->filter(fn($r) => !$r->client->is_offered)
+                                                    ->sum('total_due'),
+                                                2
+                                            ) }} $
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Readings Table -->
-            @if($displayReadings->count())
                 <div class="table-responsive" style="max-height: 48vh; overflow-y: auto;">
                     <table class="table table-hover text-center align-middle">
                         <thead class="table-secondary" style="position: sticky; top: 0; z-index: 1;">
@@ -168,6 +173,7 @@
                             @foreach($displayReadings as $reading)
                                 @php
                                     $isOffered = $reading->client->is_offered;
+                                    $hasReading = !is_null($reading->reading_date);
                                     $hasFieldError = isset($fieldErrors[$reading->id]);
                                 @endphp
                                 <tr wire:key="row-{{ $reading->id }}" class="{{ $isOffered ? 'table-info' : '' }}">
@@ -179,22 +185,176 @@
                                     <td>{{ $reading->client_id }}</td>
                                     <td>{{ $reading->client->full_name }}</td>
                                     <td>{{ $reading->previous_meter }}</td>
-                                    <td>
-                                        <input type="number"
+                                    <td x-data="{ localError: null }">
+                                        <input
+                                            type="number"
                                             id="meter-{{ $reading->id }}"
-                                            wire:blur="updateCurrentMeter({{ $reading->id }}, $event.target.value)"
-                                            wire:keydown.enter.prevent="handleEnterKey({{ $reading->id }}, $event.target.value)"
-                                            wire:keydown.arrow-down.prevent="handleArrowDown({{ $reading->id }}, $event.target.value)"
-                                            wire:keydown.arrow-up.prevent="handleArrowUp({{ $reading->id }}, $event.target.value)"
+                                            value="{{ $hasReading ? $reading->current_meter : '' }}"
                                             class="form-control form-control-sm text-center {{ $hasFieldError ? 'is-invalid' : '' }}"
-                                            {{ $isOffered ? 'style="background-color: #e3f2fd;"' : '' }}
-                                            x-effect="if ($el === document.activeElement) { $el.select(); }">
-                                        @if($hasFieldError)
-                                            <div class="invalid-feedback d-block text-start small">
+                                            x-bind:class="{ 'is-invalid': localError }"
+                                            x-effect="if ($el === document.activeElement) { $el.select(); }"
+                                            x-on:input="localError = null"
+
+                                            {{-- ENTER KEY --}}
+                                            x-on:keydown.enter.prevent="
+                                                const raw = $event.target.value;
+                                                const val = Number.isFinite(Number(raw)) ? parseInt(raw, 10) : null;
+                                                if (val === null) return;
+
+                                                const prev = {{ (int) $reading->previous_meter }};
+                                                const curr = {{ (int) $reading->current_meter }};
+
+                                                // First-time save -> call server
+                                                if (!{{ $hasReading ? 'true' : 'false' }}) {
+                                                    if (val <= prev) {
+                                                        localError = 'العداد الحالي يجب أن يكون أكبر من العداد السابق.';
+                                                        return;
+                                                    }
+
+                                                    $wire.call('updateCurrentMeter', {{ $reading->id }}, val, 'next');
+                                                    return;
+                                                }
+
+
+                                                // If unchanged, move focus to next input
+                                                if (val === curr) {
+                                                    const row = $event.target.closest('tr');
+                                                    let nextRow = row ? row.nextElementSibling : null;
+                                                    while (nextRow && !nextRow.querySelector('input[type=number]')) {
+                                                        nextRow = nextRow.nextElementSibling;
+                                                    }
+                                                    const nextInput = nextRow ? nextRow.querySelector('input[type=number]') : null;
+                                                    if (nextInput) { nextInput.focus(); nextInput.select(); }
+                                                    return;
+                                                }
+
+                                                // If value is invalid (<= previous) show instant field error (no server call)
+                                                if (val <= prev) {
+                                                    localError = 'العداد الحالي يجب أن يكون أكبر من العداد السابق.';
+                                                    return;
+                                                }
+
+                                                // Valid second-time change -> open confirm modal
+                                                window.dispatchEvent(new CustomEvent('show-confirm-modal', {
+                                                    detail: {
+                                                        readingId: {{ $reading->id }},
+                                                        value: val,
+                                                        oldMeter: curr
+                                                    }
+                                                }));
+                                            "
+
+                                            {{-- BLUR EVENT --}}
+                                            x-on:blur="
+                                                const raw = $event.target.value;
+                                                const val = Number.isFinite(Number(raw)) ? parseInt(raw, 10) : null;
+                                                if (val === null) return;
+
+                                                const prev = {{ (int) $reading->previous_meter }};
+                                                const curr = {{ (int) $reading->current_meter }};
+
+                                                if (!{{ $hasReading ? 'true' : 'false' }}) {
+                                                    if (val <= prev) {
+                                                        localError = 'العداد الحالي يجب أن يكون أكبر من العداد السابق.';
+                                                        return;
+                                                    }
+
+                                                    $wire.call('updateCurrentMeter', {{ $reading->id }}, val);
+                                                    return;
+                                                }
+
+
+                                                if (val === curr) return;
+
+                                                if (val <= prev) {
+                                                    localError = 'العداد الحالي يجب أن يكون أكبر من العداد السابق.';
+                                                    return;
+                                                }
+
+                                                window.dispatchEvent(new CustomEvent('show-confirm-modal', {
+                                                    detail: {
+                                                        readingId: {{ $reading->id }},
+                                                        value: val,
+                                                        oldMeter: curr
+                                                    }
+                                                }));
+                                            "
+
+                                            {{-- ARROW DOWN --}}
+                                            x-on:keydown.arrow-down.prevent="
+                                                const raw = $event.target.value;
+                                                const val = Number.isFinite(Number(raw)) ? parseInt(raw, 10) : null;
+                                                if (val === null) return;
+
+                                                const prev = {{ (int) $reading->previous_meter }};
+                                                const curr = {{ (int) $reading->current_meter }};
+
+                                                if (!{{ $hasReading ? 'true' : 'false' }}) {
+                                                    if (val <= prev) {
+                                                        localError = 'العداد الحالي يجب أن يكون أكبر من العداد السابق.';
+                                                        return;
+                                                    }
+
+                                                    $wire.call('updateCurrentMeter', {{ $reading->id }}, val, 'next');
+                                                    return;
+                                                }
+
+
+                                                if (val === curr) {
+                                                    // move focus to next
+                                                    const row = $event.target.closest('tr');
+                                                    let nextRow = row ? row.nextElementSibling : null;
+                                                    while (nextRow && !nextRow.querySelector('input[type=number]')) {
+                                                        nextRow = nextRow.nextElementSibling;
+                                                    }
+                                                    const nextInput = nextRow ? nextRow.querySelector('input[type=number]') : null;
+                                                    if (nextInput) { nextInput.focus(); nextInput.select(); }
+                                                    return;
+                                                }
+
+                                                if (val <= prev) {
+                                                    localError = 'العداد الحالي يجب أن يكون أكبر من العداد السابق.';
+                                                    return;
+                                                }
+
+                                                window.dispatchEvent(new CustomEvent('show-confirm-modal', {
+                                                    detail: {
+                                                        readingId: {{ $reading->id }},
+                                                        value: val,
+                                                        oldMeter: curr
+                                                    }
+                                                }));
+                                            "
+
+                                            {{-- ARROW UP -- PURE FOCUS MOVEMENT (NO UPDATE) --}}
+                                            x-on:keydown.arrow-up.prevent="
+                                                const row = $event.target.closest('tr');
+                                                if (!row) return;
+
+                                                let prevRow = row.previousElementSibling;
+
+                                                while (prevRow) {
+                                                    const input = prevRow.querySelector('input[type=number]');
+                                                    if (input) {
+                                                        input.focus();
+                                                        input.select();
+                                                        break;
+                                                    }
+                                                    prevRow = prevRow.previousElementSibling;
+                                                }
+                                            "
+                                        >
+
+                                        <!-- client-side instant error -->
+                                        <div class="invalid-feedback d-block text-start small" x-show="localError" x-text="localError"></div>
+
+                                        <!-- server-side field error (show only when no client local error) -->
+                                        <div class="invalid-feedback d-block text-start small" x-show="!localError" x-cloak>
+                                            @if($hasFieldError)
                                                 <i class="bi bi-exclamation-triangle me-1"></i>
                                                 {{ $fieldErrors[$reading->id] }}
-                                            </div>
-                                        @endif
+                                            @endif
+                                        </div>
                                     </td>
                                     <td>{{ $reading->consumption }} k.w</td>
                                     <td>
@@ -245,7 +405,7 @@
                 </div>
             @else
                 <div class="alert alert-light border text-center shadow-sm rounded-3 py-5">
-                    <i class="bi bi-speedometer2 display-4 text-muted mb-3"></i>
+                    <i class="bi bi-speedometer2 display-4 mb-3 text-success"></i>
                     <h5 class="text-muted">لا يوجد قراءات</h5>
                     @if($search || $selectedClientId)
                         <p class="text-muted mb-3">لا توجد نتائج للبحث</p>
@@ -257,6 +417,10 @@
                     @endif
                 </div>
             @endif
+
+
+                @include('livewire.partials.confirm-meter-update-modal')
+
         </div>
     </div>
 </div>

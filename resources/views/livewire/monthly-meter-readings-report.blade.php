@@ -75,8 +75,12 @@
                             <div class="card-body py-2">
                                 <div class="row text-center fw-bold">
                                     <div class="col border-end">
+                                        <div>إجمالي التقدمة</div>
+                                        <div>{{ $statistics['consumption_offered'] }} k.w</div>
+                                    </div>
+                                    <div class="col border-end">
                                         <div>إجمالي الاستهلاك</div>
-                                        <div>{{ $statistics['total_consumption'] }} k.w</div>
+                                        <div>{{ $statistics['consumption_regular'] }} k.w</div>
                                     </div>
                                     <div class="col border-end">
                                         <div>إجمالي مبلغ هذا الشهر</div>
@@ -139,7 +143,10 @@
                         <tfoot class="print-table-footer d-none d-print-table-row-group">
                             <tr class="totals-row">
                                 <td colspan="4">الإجمالي:</td>
-                                <td>{{ $statistics['total_consumption'] }} k.w</td>
+                                <td>
+                                    <div>تقدمة: {{ $statistics['consumption_offered'] }} k.w</div>
+                                    <div>استهلاك: {{ $statistics['consumption_regular'] }} k.w</div>
+                                </td>
                                 <td>{{ number_format($statistics['total_amount'], 2) }} $</td>
                                 <td>{{ number_format($statistics['total_maintenance_cost'], 2) }} $</td>
                                 <td>{{ number_format($statistics['total_previous_balance'], 2) }} $</td>
@@ -150,7 +157,7 @@
                 </div>
             @else
                 <div class="text-center py-5">
-                    <i class="bi bi-file-earmark-text display-4 text-muted mb-3"></i>
+                    <i class="bi bi-file-earmark-text display-4 text-success mb-3"></i>
                     <h5 class="text-muted">لا توجد قراءات</h5>
                     <p class="text-muted">لا توجد قراءات مسجلة للشهر المحدد</p>
                 </div>

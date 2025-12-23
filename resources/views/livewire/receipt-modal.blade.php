@@ -80,10 +80,11 @@
                                             لا توجد نتائج للمشترك المحدد
                                         @endif
                                     </div>
+
                                 @else
-                                    {{-- No unpaid clients at all --}}
-                                    <div class="alert alert-info text-center">
-                                         ا يوجد مشتركين لديهم مبالغ مستحقة
+                                    <div class="text-center py-5">
+                                        <i class="bi bi-check-circle display-4 text-success mb-3"></i>
+                                        <h5 class="text-muted">لا يوجد مشتركين لديهم مبالغ مستحقة</h5>
                                     </div>
                                 @endif
                             @else

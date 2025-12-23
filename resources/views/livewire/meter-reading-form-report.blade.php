@@ -49,7 +49,7 @@
 
             @if(count($clients))
                 <div class="table-responsive" style="max-height: 73vh; overflow-y: auto;">
-                    <table class="table table-bordered text-center align-middle">
+                    <table class="table table-bordered text-center align-middle" id="report-table">
                         <thead class="table-light print-table-header">
                             <tr>
                                 <th>رقم المشترك</th>
@@ -72,9 +72,8 @@
                 </div>
             @else
                 <div class="text-center py-5">
-                    <i class="bi bi-people display-4 text-muted mb-3"></i>
-                    <h5 class="text-muted">لا يوجد مشتركين </h5>
-                    <p class="text-muted">لا توجد مشتركين حتى الآن</p>
+                    <i class="bi bi-speedometer2 display-4 text-success mb-3"></i>
+                    <h5 class="text-muted">لا يوجد قراءات</h5>
                 </div>
             @endif
         </div>
@@ -108,6 +107,11 @@
                 border: none !important;
                 background: white !important;
                 box-shadow: none !important;
+            }
+
+            .table-responsive {
+                max-height: none !important;
+                overflow: visible !important;
             }
 
             /* Excel-like table style */
@@ -163,7 +167,7 @@
             .table-responsive thead th {
                 position: sticky;
                 top: 0;
-                background: #e6e6e6; /* match thead bg */
+                background: #e6e6e6; 
                 z-index: 5;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             }

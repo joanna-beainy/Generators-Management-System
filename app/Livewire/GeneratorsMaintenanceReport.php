@@ -30,7 +30,7 @@ class GeneratorsMaintenanceReport extends Component
 
     protected $rules = [
         'generator_id' => 'required|exists:generators,id',
-        'amount' => 'required|numeric|min:0.01',
+        'amount' => 'required|numeric|min:0.50',
         'description' => 'nullable|string',
     ];
 
@@ -39,7 +39,7 @@ class GeneratorsMaintenanceReport extends Component
         'generator_id.exists' => 'المولد المحدد غير صالح.',
         'amount.required' => 'يرجى إدخال المبلغ.',
         'amount.numeric' => 'يرجى إدخال رقم صحيح للمبلغ.',
-        'amount.min' => 'يجب أن يكون المبلغ على الأقل 0.01.',
+        'amount.min' => 'يجب أن يكون المبلغ على الأقل 0.50.',
     ];
 
     public function mount()
