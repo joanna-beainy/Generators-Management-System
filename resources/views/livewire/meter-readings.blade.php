@@ -185,177 +185,102 @@
                                     <td>{{ $reading->client_id }}</td>
                                     <td>{{ $reading->client->full_name }}</td>
                                     <td>{{ $reading->previous_meter }}</td>
-                                    <td x-data="{ localError: null }">
+                                    <td x-data="{ localError: '' }">
                                         <input
                                             type="number"
                                             id="meter-{{ $reading->id }}"
                                             value="{{ $hasReading ? $reading->current_meter : '' }}"
                                             class="form-control form-control-sm text-center {{ $hasFieldError ? 'is-invalid' : '' }}"
-                                            x-bind:class="{ 'is-invalid': localError }"
+                                            x-bind:class="{ 'is-invalid': localError !== '' }"
                                             x-effect="if ($el === document.activeElement) { $el.select(); }"
-                                            x-on:input="localError = null"
+                                            x-on:input="localError = ''"
 
-                                            {{-- ENTER KEY --}}
-                                            x-on:keydown.enter.prevent="
-                                                const raw = $event.target.value;
-                                                const val = Number.isFinite(Number(raw)) ? parseInt(raw, 10) : null;
-                                                if (val === null) return;
-
+                                            x-on:keydown="
                                                 const prev = {{ (int) $reading->previous_meter }};
                                                 const curr = {{ (int) $reading->current_meter }};
+                                                const hasReading = {{ $hasReading ? 'true' : 'false' }};
 
-                                                // First-time save -> call server
-                                                if (!{{ $hasReading ? 'true' : 'false' }}) {
-                                                    if (val <= prev) {
+                                                const handle = (moveNext) => {
+                                                    const val = parseInt($event.target.value, 10);
+                                                    if (isNaN(val)) return;
+
+                                                    if (val < prev) {
                                                         localError = 'العداد الحالي يجب أن يكون أكبر من العداد السابق.';
                                                         return;
                                                     }
 
-                                                    $wire.call('updateCurrentMeter', {{ $reading->id }}, val, 'next');
-                                                    return;
+                                                    // FIRST TIME
+                                                    if (!hasReading) {
+                                                        $wire.call('updateCurrentMeter', {{ $reading->id }}, val, moveNext ? 'next' : null);
+                                                        return;
+                                                    }
+
+                                                    // SECOND TIME – same value → do nothing
+                                                    if (val === curr) return;
+
+                                                    // SECOND TIME – different value → confirm
+                                                    window.dispatchEvent(new CustomEvent('show-confirm-modal', {
+                                                        detail: {
+                                                            readingId: {{ $reading->id }},
+                                                            value: val,
+                                                            oldMeter: curr
+                                                        }
+                                                    }));
+                                                };
+
+                                                if ($event.key === 'Enter' || $event.key === 'ArrowDown') {
+                                                    $event.preventDefault();
+                                                    handle(true);
                                                 }
 
-
-                                                // If unchanged, move focus to next input
-                                                if (val === curr) {
+                                                if ($event.key === 'ArrowUp') {
+                                                    $event.preventDefault();
                                                     const row = $event.target.closest('tr');
-                                                    let nextRow = row ? row.nextElementSibling : null;
-                                                    while (nextRow && !nextRow.querySelector('input[type=number]')) {
-                                                        nextRow = nextRow.nextElementSibling;
+                                                    let prevRow = row?.previousElementSibling;
+                                                    while (prevRow) {
+                                                        const input = prevRow.querySelector('input[type=number]');
+                                                        if (input) {
+                                                            input.focus();
+                                                            input.select();
+                                                            break;
+                                                        }
+                                                        prevRow = prevRow.previousElementSibling;
                                                     }
-                                                    const nextInput = nextRow ? nextRow.querySelector('input[type=number]') : null;
-                                                    if (nextInput) { nextInput.focus(); nextInput.select(); }
-                                                    return;
                                                 }
-
-                                                // If value is invalid (<= previous) show instant field error (no server call)
-                                                if (val <= prev) {
-                                                    localError = 'العداد الحالي يجب أن يكون أكبر من العداد السابق.';
-                                                    return;
-                                                }
-
-                                                // Valid second-time change -> open confirm modal
-                                                window.dispatchEvent(new CustomEvent('show-confirm-modal', {
-                                                    detail: {
-                                                        readingId: {{ $reading->id }},
-                                                        value: val,
-                                                        oldMeter: curr
-                                                    }
-                                                }));
                                             "
 
-                                            {{-- BLUR EVENT --}}
                                             x-on:blur="
-                                                const raw = $event.target.value;
-                                                const val = Number.isFinite(Number(raw)) ? parseInt(raw, 10) : null;
-                                                if (val === null) return;
+                                                if ({{ $hasReading ? 'true' : 'false' }}) return;
 
+                                                const val = parseInt($event.target.value, 10);
                                                 const prev = {{ (int) $reading->previous_meter }};
-                                                const curr = {{ (int) $reading->current_meter }};
+                                                if (isNaN(val)) return;
 
-                                                if (!{{ $hasReading ? 'true' : 'false' }}) {
-                                                    if (val <= prev) {
-                                                        localError = 'العداد الحالي يجب أن يكون أكبر من العداد السابق.';
-                                                        return;
-                                                    }
-
-                                                    $wire.call('updateCurrentMeter', {{ $reading->id }}, val);
-                                                    return;
-                                                }
-
-
-                                                if (val === curr) return;
-
-                                                if (val <= prev) {
+                                                if (val < prev) {
                                                     localError = 'العداد الحالي يجب أن يكون أكبر من العداد السابق.';
                                                     return;
                                                 }
 
-                                                window.dispatchEvent(new CustomEvent('show-confirm-modal', {
-                                                    detail: {
-                                                        readingId: {{ $reading->id }},
-                                                        value: val,
-                                                        oldMeter: curr
-                                                    }
-                                                }));
-                                            "
-
-                                            {{-- ARROW DOWN --}}
-                                            x-on:keydown.arrow-down.prevent="
-                                                const raw = $event.target.value;
-                                                const val = Number.isFinite(Number(raw)) ? parseInt(raw, 10) : null;
-                                                if (val === null) return;
-
-                                                const prev = {{ (int) $reading->previous_meter }};
-                                                const curr = {{ (int) $reading->current_meter }};
-
-                                                if (!{{ $hasReading ? 'true' : 'false' }}) {
-                                                    if (val <= prev) {
-                                                        localError = 'العداد الحالي يجب أن يكون أكبر من العداد السابق.';
-                                                        return;
-                                                    }
-
-                                                    $wire.call('updateCurrentMeter', {{ $reading->id }}, val, 'next');
-                                                    return;
-                                                }
-
-
-                                                if (val === curr) {
-                                                    // move focus to next
-                                                    const row = $event.target.closest('tr');
-                                                    let nextRow = row ? row.nextElementSibling : null;
-                                                    while (nextRow && !nextRow.querySelector('input[type=number]')) {
-                                                        nextRow = nextRow.nextElementSibling;
-                                                    }
-                                                    const nextInput = nextRow ? nextRow.querySelector('input[type=number]') : null;
-                                                    if (nextInput) { nextInput.focus(); nextInput.select(); }
-                                                    return;
-                                                }
-
-                                                if (val <= prev) {
-                                                    localError = 'العداد الحالي يجب أن يكون أكبر من العداد السابق.';
-                                                    return;
-                                                }
-
-                                                window.dispatchEvent(new CustomEvent('show-confirm-modal', {
-                                                    detail: {
-                                                        readingId: {{ $reading->id }},
-                                                        value: val,
-                                                        oldMeter: curr
-                                                    }
-                                                }));
-                                            "
-
-                                            {{-- ARROW UP -- PURE FOCUS MOVEMENT (NO UPDATE) --}}
-                                            x-on:keydown.arrow-up.prevent="
-                                                const row = $event.target.closest('tr');
-                                                if (!row) return;
-
-                                                let prevRow = row.previousElementSibling;
-
-                                                while (prevRow) {
-                                                    const input = prevRow.querySelector('input[type=number]');
-                                                    if (input) {
-                                                        input.focus();
-                                                        input.select();
-                                                        break;
-                                                    }
-                                                    prevRow = prevRow.previousElementSibling;
-                                                }
+                                                $wire.call('updateCurrentMeter', {{ $reading->id }}, val);
                                             "
                                         >
 
-                                        <!-- client-side instant error -->
-                                        <div class="invalid-feedback d-block text-start small" x-show="localError" x-text="localError"></div>
+                                        <!-- CLIENT-SIDE ERROR (IMMEDIATE) -->
+                                        <div
+                                            x-show="localError !== ''"
+                                            class="invalid-feedback d-block text-start small"
+                                            x-text="localError">
+                                        </div>
 
-                                        <!-- server-side field error (show only when no client local error) -->
-                                        <div class="invalid-feedback d-block text-start small" x-show="!localError" x-cloak>
-                                            @if($hasFieldError)
+                                        <!-- SERVER-SIDE ERROR -->
+                                        @if($hasFieldError)
+                                            <div class="invalid-feedback d-block text-start small">
                                                 <i class="bi bi-exclamation-triangle me-1"></i>
                                                 {{ $fieldErrors[$reading->id] }}
-                                            @endif
-                                        </div>
+                                            </div>
+                                        @endif
                                     </td>
+
                                     <td>{{ $reading->consumption }} k.w</td>
                                     <td>
                                         @if(!$isOffered)
@@ -424,3 +349,4 @@
         </div>
     </div>
 </div>
+

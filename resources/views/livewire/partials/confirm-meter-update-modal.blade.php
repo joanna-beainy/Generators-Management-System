@@ -24,7 +24,6 @@
                         <i class="bi bi-exclamation-triangle me-2"></i>
                         تأكيد تعديل قراءة العداد
                     </h5>
-                    <!-- hide immediately on client -->
                     <button type="button" class="btn-close" @click="showConfirmModal = false"></button>
                 </div>
 
@@ -55,13 +54,11 @@
                 </div>
 
                 <div class="modal-footer justify-content-between">
-                    <!-- hide immediately on client -->
                     <button class="btn btn-outline-secondary"
                             @click="showConfirmModal = false">
                         إلغاء
                     </button>
 
-                    <!-- hide modal client-side, then call server with params -->
                     <button class="btn btn-danger"
                             @click="showConfirmModal = false; $nextTick(() => $wire.call('confirmMeterUpdate', confirmReadingId, confirmNewMeter))">
                         نعم، تعديل القراءة

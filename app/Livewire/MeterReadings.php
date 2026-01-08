@@ -182,7 +182,7 @@ class MeterReadings extends Component
                 return;
             }
 
-            // notify client to open modal (Alpine listens for 'show-confirm-modal')
+            // Dispatch browser event to show confirmation modal
             $this->dispatchBrowserEvent('show-confirm-modal', [
                 'readingId' => $readingId,
                 'oldMeter'   => (int) $reading->current_meter,

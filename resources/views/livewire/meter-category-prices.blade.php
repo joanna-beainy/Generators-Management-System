@@ -58,7 +58,7 @@
             {{-- Update Existing Categories --}}
             <form wire:submit.prevent="updatePrices">
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover text-center align-middle rounded-3">
+                    <table class="table table-hover text-center align-middle rounded-3">
                         <thead class="table-light">
                             <tr>
                                 <th>الفئة</th>
