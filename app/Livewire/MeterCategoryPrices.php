@@ -8,6 +8,7 @@ use App\Models\MeterCategory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
+use Native\Desktop\Facades\Alert;
 
 class MeterCategoryPrices extends Component
 {
@@ -19,6 +20,17 @@ class MeterCategoryPrices extends Component
     public $alertType = null;
 
      protected $listeners = ['category-deleted' => 'loadCategories'];
+
+    public function confirmDelete($id)
+    {
+        $buttonIndex = Alert::title('تأكيد الحذف')
+            ->buttons(['إلغاء', 'نعم'])
+            ->show('هل أنت متأكد من حذف هذه الفئة؟');
+
+        if ($buttonIndex === 1) {
+            $this->deleteCategory($id);
+        }
+    }
 
     public function mount()
     {

@@ -1,76 +1,80 @@
-<div class="container mt-2" dir="rtl">
-    <div class="card shadow-sm">
-        <div class="card-header bg-light text-dark">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="mb-0">
-                        <i class="bi bi-wallet2 text-success me-2"></i>
-                        إدخال دفعة جديدة
-                    </h5>
-                    <small class="opacity-75">سعر الصرف: 1$ = {{ number_format($this->exchangeRate) }} ل.ل</small>
-                </div>
-                <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-house me-1"></i>
-                    إغلاق
-                </a>
-            </div>
+<div class="container mt-2" dir="rtl" x-data="{}">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-0">
+                <i class="bi bi-wallet2 text-success me-2"></i> إدخال دفعة جديدة
+            </h3>
+            <p class="text-secondary mb-0 mt-1">
+                <i class="bi bi-currency-exchange me-1"></i> سعر الصرف: 1$ = <span class="fw-bold text-dark">{{ number_format($this->exchangeRate) }} ل.ل</span>
+            </p>
         </div>
-        
-        <div class="card-body">
-            {{-- Alpine.js Auto-Disappearing Alert --}}
-            @if ($alertMessage)
-                <div 
-                    x-data="{ show: true }" 
-                    x-show="show" 
-                    x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
-                    x-transition:leave="transition ease-in duration-300"
-                    x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
-                    class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4">
-                    <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
-                    {{ $alertMessage }}
-                    <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
-                </div>
-            @endif
+        <div class="d-flex gap-2">
+            <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary rounded-pill shadow-sm px-4">
+                <i class="bi bi-x-circle me-1"></i> إغلاق
+            </a>
+        </div>
+    </div>
 
+    <!-- Alpine.js Auto-Disappearing Alert -->
+    @if ($alertMessage)
+        <div 
+            x-data="{ show: true }" 
+            x-show="show" 
+            x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
+            x-transition:leave="transition ease-in duration-300"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4">
+            <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
+            {{ $alertMessage }}
+            <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
+        </div>
+    @endif
+        
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="card-body p-4">
             <!-- Overpayment Confirmation Modal -->
             @if($showConfirmationModal)
                 @include('livewire.partials.overpayment-confirmation-modal')
             @endif
 
             <!-- Search and Client Selection -->
-            <div class="row mb-4">
+            <div class="row g-3 mb-4">
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">ابحث عن المشترك</label>
-                    <div class="input-group">
+                    <label class="form-label fw-bold text-secondary"><i class="bi bi-search me-1"></i> ابحث عن المشترك</label>
+                    <div class="input-group overflow-hidden rounded-pill shadow-sm border">
                         <input type="text" 
                                wire:model="search" 
+                               x-ref="searchField"
                                wire:keydown.enter="handleSearch"
-                               class="form-control" 
+                               class="form-control border-0" 
                                placeholder="اكتب اسم المشترك أو رقمه..."
-                               wire:loading.attr="disabled"
-                               style="text-align: right;">
-                        <button class="btn btn-outline-secondary" type="button" wire:click="handleSearch">
-                            <i class="bi bi-search"></i>
+                               autofocus
+                               style="text-align: right; box-shadow: none;">
+                        <button class="btn btn-white border-0" type="button" wire:click="handleSearch">
+                            
                         </button>
                     </div>
-                    <div wire:loading wire:target="handleSearch" class="small text-muted mt-1">
+                    <div wire:loading wire:target="handleSearch" class="small text-muted mt-1 px-2">
                         <i class="bi bi-arrow-repeat spinner me-1"></i> جاري البحث...
                     </div>
                 </div>
                 
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">المشترك المحدد</label>
-                    <select wire:model.live="selectedClientId" class="form-select" style="text-align: right;">
-                        <option value="">-- اختر المشترك --</option>
-                        @foreach($clients as $client)
-                            <option value="{{ $client->id }}" wire:key="client-{{ $client->id }}">
-                                {{ $client->id }} - {{ $client->full_name }} 
-                            </option>
-                        @endforeach
-                    </select>
+                    <label class="form-label fw-bold text-secondary"><i class="bi bi-person-check me-1"></i> اختيار مشترك</label>
+                    <div class="shadow-sm rounded-pill overflow-hidden border">
+                        <select wire:model.live="selectedClientId" x-ref="clientDropdown" class="form-select border-0" style="text-align: right; box-shadow: none;">
+                            <option value="">-- اختر المشترك --</option>
+                            @foreach($clients as $client)
+                                <option value="{{ $client->id }}" wire:key="client-{{ $client->id }}">
+                                    {{ $client->id }} - {{ $client->full_name }} 
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     @error('selectedClientId')
-                        <div class="text-danger small mt-1">{{ $message }}</div>
+                        <div class="text-danger small mt-1 px-2">{{ $message }}</div>
                     @enderror
                 </div>
             </div>
@@ -94,23 +98,29 @@
                     </div>
                 @else
                     <!-- Show payment form for regular clients -->
-                    <div class="border rounded p-2 bg-light" wire:key="payment-form-{{ $selectedClient->id }}">
-                        <h6 class="mb-3">
-                            <i class="bi bi-person h4"></i>
-                            <span class="text-primary fw-bold" style="font-size:20px">{{ $selectedClient->full_name }}</span>
-                        </h6>
+                    <div class="border-0 rounded-4 p-4 pb-2 bg-light shadow-sm" wire:key="payment-form-{{ $selectedClient->id }}">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="bg-white p-3 rounded-circle shadow-sm me-3">
+                                <i class="bi bi-person text-success h4 mb-0"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0 text-dark">{{ $selectedClient->full_name }}</h5>
+                            </div>
+                        </div>
                         
                         <!-- Current Balance -->
-                        <div class="row mb-3">
+                        <div class="row mb-4">
                             <div class="col-md-6">
-                                <div class="alert alert-info border-0 mb-0">
-                                    <strong>المبلغ المتبقي الحالي:</strong>
-                                    <div class="h5 mb-0 text-dark">
-                                        {{ number_format($selectedClient->current_remaining_usd, 2) }} $
+                                <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+                                    <div class="card-body p-3">
+                                        <div class="text-muted small mb-1">المبلغ المتبقي الحالي</div>
+                                        <div class="h4 fw-bold mb-0 text-primary">
+                                            {{ number_format($selectedClient->current_remaining_usd, 2) }} $
+                                        </div>
+                                        <div class="small text-secondary fw-semibold mt-1">
+                                            ≈ {{ number_format($selectedClient->current_remaining_lbp, 0) }} ل.ل
+                                        </div>
                                     </div>
-                                    <small class="text-muted">
-                                        ≈ {{ number_format($selectedClient->current_remaining_lbp, 0) }} ل.ل
-                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -119,17 +129,18 @@
                             <div class="row g-3">
                                 <!-- Amount Paid -->
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">المبلغ المدفوع ($) *</label>
+                                    <label class="form-label fw-bold">المبلغ المدفوع ($) <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <input type="number" 
                                                wire:model.live="amount" 
+                                               x-init="$el.focus()"
                                                class="form-control @error('amount') is-invalid @enderror" 
                                                step="0.50" 
                                                min="0.50"
                                                placeholder="0.00"
                                                required
-                                               style="text-align: left;">
-                                        <span class="input-group-text">$</span>
+                                               style="text-align: left; box-shadow: shadow-sm;">
+                                        <span class="input-group-text border-0 bg-white text-success fw-bold">$</span>
                                     </div>
                                     @error('amount')
                                         <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -165,24 +176,27 @@
                                 </div>
 
                                 <!-- Total Summary -->
-                                <div class="col-12">
-                                    <div class="alert alert-warning border-0">
-                                        <div class="d-flex justify-content align-items-center">
-                                            <strong>الإجمالي:</strong> 
-                                            <span class="fw-bold text-dark h5 mb-0">
-                                                {{ number_format($this->total_usd, 2) }} $
-                                            </span>
+                                <div class="col-12 mt-4">
+                                    <div class="card border-0 shadow-sm rounded-4 bg-success bg-opacity-10">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex justify-content-start align-items-center gap-3">
+                                                <span class="fw-bold text-success h5 mb-0">إجمالي الدفعة:</span> 
+                                                <div class="text-end">
+                                                    <div class="h4 fw-bold text-dark mb-0">
+                                                        {{ number_format($this->total_usd, 2) }} $
+                                                    </div>
+                                                    <div class="small text-secondary fw-semibold">
+                                                        ≈ {{ $this->total_lbp }} ل.ل
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <hr class="my-2">
-                                        <small class="text-muted">
-                                            ≈ {{ $this->total_lbp }} ل.ل
-                                        </small>
                                     </div>
                                 </div>
 
                                 <!-- Buttons -->
-                                <div class="col-12 text-start">
-                                    <button type="submit" class="btn btn-success" wire:loading.attr="disabled">
+                                <div class="col-12 text-start mt-4">
+                                    <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm" wire:loading.attr="disabled">
                                         <i class="bi bi-save me-2"></i>
                                         ادخال الدفعة
                                         <span wire:loading wire:target="save">
@@ -191,8 +205,9 @@
                                     </button>
                                     
                                     <button type="button" 
-                                            class="btn btn-outline-secondary me-2"
-                                            wire:click="$set('selectedClientId', null)"
+                                            class="btn btn-outline-secondary rounded-pill px-4 ms-2"
+                                            wire:click="resetFilters"
+                                            @click="$refs.searchField.value = ''; $refs.clientDropdown.value = ''; $refs.searchField.focus()"
                                             wire:loading.attr="disabled">
                                         إلغاء
                                     </button>
@@ -203,20 +218,22 @@
                 @endif
             @else
                 <!-- No Client Selected State -->
-                <div class="alert alert-light border text-center shadow-sm rounded-3 py-5">
+                <div class="text-center py-5">
                     @if($search && $clients->isEmpty())
-                        <div class="alert alert-warning border-0">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            لا توجد نتائج للبحث "{{ $search }}"
+                        <div class="py-5">
+                            <i class="bi bi-search display-1 text-muted opacity-25 mb-3"></i>
+                            <h5 class="text-muted">لا توجد نتائج للبحث "{{ $search }}"</h5>
                         </div>
                     @elseif(!$search && $clients->isEmpty())
-                        <div class="alert alert-info border-0">
-                            <i class="bi bi-check-circle me-2 text-success"></i>
-                            لا يوجد مشتركين حتى الآن
+                        <div class="py-5">
+                            <i class="bi bi-people display-1 text-muted opacity-25 mb-3"></i>
+                            <h5 class="text-muted">لا يوجد مشتركين حتى الآن</h5>
                         </div>
                     @else
-                        <div class="text-muted">
-                            <p class="h5">ابحث عن المشترك أو اختره من القائمة</p>
+                        <div class="text-center py-5">
+                            <i class="bi bi-wallet2 display-1 text-success opacity-50 mb-3"></i>
+                            <h5 class="text-muted">اختر مشتركاً لبدء إدخال الدفعة</h5>
+                            <p class="text-muted small">يمكنك البحث بالاسم أو الرقم</p>
                         </div>
                     @endif
                 </div>

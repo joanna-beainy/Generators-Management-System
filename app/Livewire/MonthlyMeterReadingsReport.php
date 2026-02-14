@@ -58,7 +58,7 @@ class MonthlyMeterReadingsReport extends Component
                     $query->where('user_id', Auth::id());
                 })
                 ->whereNotNull('reading_date')
-                ->selectRaw('YEAR(reading_for_month) as year')
+                ->selectRaw("strftime('%Y', reading_for_month) as year")
                 ->distinct()
                 ->orderBy('year', 'desc')
                 ->pluck('year')

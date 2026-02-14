@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Exception;
+use Native\Desktop\Facades\Alert;
 
 class FuelConsumptionsReport extends Component
 {
@@ -79,7 +80,7 @@ class FuelConsumptionsReport extends Component
 
             // Get available years from user's fuel consumptions
             $this->years = FuelConsumption::where('user_id', Auth::id())
-                ->selectRaw('YEAR(created_at) as year')
+                ->selectRaw("strftime('%Y', created_at) as year")
                 ->distinct()
                 ->orderBy('year', 'desc')
                 ->pluck('year')
@@ -200,6 +201,17 @@ class FuelConsumptionsReport extends Component
         }
     }
 
+    public function confirmDelete($id)
+    {
+        $buttonIndex = Alert::title('تأكيد الحذف')
+            ->buttons(['الغاء', 'نعم'])
+            ->show('هل أنت متأكد من حذف استهلاك الوقود هذا؟');
+
+        if ($buttonIndex === 1) {
+            $this->deleteConsumption($id);
+        }
+    }
+
     public function deleteConsumption($consumptionId)
     {
         try {
@@ -214,7 +226,7 @@ class FuelConsumptionsReport extends Component
             $this->setAlert('تم حذف استهلاك الوقود بنجاح.', 'success');
 
         } catch (AuthorizationException $e) {
-            $this->setAlert('ليس لديك صلاحية لحذف استهلاك الوقود هذا.', 'danger');
+            $this->setAlert('لا يمكنك حذف استهلاك الوقود', 'danger');
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء حذف استهلاك الوقود.', 'danger');
         }

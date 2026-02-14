@@ -12,9 +12,18 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin' => \App\Http\Middleware\AdminOnly::class,
+            'monthly.tasks' => \App\Http\Middleware\CheckMonthlyTasks::class,
+            'ensure.activated' => \App\Http\Middleware\EnsureAppActivated::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->respond(function ($response, $e, $request) {
+            if ($e instanceof \Illuminate\Session\TokenMismatchException) {
+                // Invalidate session and redirect to login to avoid "Page Expired" loops
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return redirect()->route('login');
+            }
+            return $response;
+        });
     })->create();

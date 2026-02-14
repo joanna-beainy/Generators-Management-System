@@ -83,7 +83,7 @@ class PaymentHistory extends Component
                     $query->where('user_id', Auth::id());
                 })
                 ->where('client_id', $this->clientId)
-                ->selectRaw('YEAR(paid_at) as year')
+                ->selectRaw("strftime('%Y', paid_at) as year")
                 ->distinct()
                 ->orderBy('year', 'desc')
                 ->pluck('year')

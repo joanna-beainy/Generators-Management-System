@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Auth\Access\AuthorizationException;
 use Exception;
+use Native\Desktop\Facades\Alert;
 
 class GeneratorsMaintenanceReport extends Component
 {
@@ -79,7 +80,7 @@ class GeneratorsMaintenanceReport extends Component
 
             // Get available years from user's maintenances
             $this->years = GeneratorMaintenance::where('user_id', Auth::id())
-                ->selectRaw('YEAR(created_at) as year')
+                ->selectRaw("strftime('%Y', created_at) as year")
                 ->distinct()
                 ->orderBy('year', 'desc')
                 ->pluck('year')
@@ -197,6 +198,17 @@ class GeneratorsMaintenanceReport extends Component
             $this->setAlert('ليس لديك صلاحية لإضافة مصاريف صيانة', 'danger');
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء حفظ بيانات الصيانة', 'danger');
+        }
+    }
+
+    public function confirmDelete($id)
+    {
+        $buttonIndex = Alert::title('تأكيد الحذف')
+            ->buttons(['الغاء', 'نعم'])
+            ->show('هل أنت متأكد من حذف مصاريف الصيانة هذه؟');
+
+        if ($buttonIndex === 1) {
+            $this->deleteMaintenance($id);
         }
     }
 

@@ -19,6 +19,23 @@
         }
     }">
     
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-0">
+                <i class="bi bi-speedometer2 text-success me-2"></i> قراءات العدادات
+            </h3>
+            @if($arabicMonthName)
+                <p class="text-secondary mb-0 mt-1"><i class="bi bi-calendar3 me-1"></i> شهر {{ $arabicMonthName }}</p>
+            @endif
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary rounded-pill shadow-sm px-4">
+                <i class="bi bi-x-circle me-1"></i> إغلاق
+            </a>
+        </div>
+    </div>
+
     <!-- Alpine.js Auto-Disappearing Alert (Global) -->
     @if ($alertMessage)
         <div 
@@ -35,138 +52,137 @@
         </div>
     @endif
 
-    <!-- Header -->
-    <div class="card shadow-sm">
-        <div class="card-header bg-light text-dark">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="mb-0">
-                        <i class="bi bi-speedometer2 text-success me-2"></i> قراءات العدادات
-                    </h5>
-                    @if($arabicMonthName)
-                        <p class="text-muted mb-0">عن شهر {{ $arabicMonthName }}</p>
-                    @endif
+    @if($displayReadings->count())
+        <!-- Statistics Section -->
+        <div class="row g-3 mb-4 no-print">
+            <div class="col-md">
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-body p-3 text-center">
+                        <div class="text-muted small mb-1">إجمالي الاستهلاك</div>
+                        <div class="h5 fw-bold mb-0 text-dark">
+                            {{ $displayReadings->filter(fn($r) => !$r->client->is_offered)->sum('consumption') }} <span class="small font-monospace">k.w</span>
+                        </div>
+                    </div>
                 </div>
-                <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-house me-1"></i>
-                    إغلاق
-                </a>
+            </div>
+            <div class="col-md">
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-body p-3 text-center">
+                        <div class="text-muted small mb-1">إجمالي التقدمة</div>
+                        <div class="h5 fw-bold mb-0 text-info">
+                            {{ $displayReadings->filter(fn($r) => $r->client->is_offered)->sum('consumption') }} <span class="small font-monospace">k.w</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md">
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-body p-3 text-center">
+                        <div class="text-muted small mb-1">إجمالي مبلغ الشهر</div>
+                        <div class="h5 fw-bold mb-0 text-success">
+                            {{ number_format($displayReadings->filter(fn($r) => !$r->client->is_offered)->sum('amount'), 2) }} $
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md">
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-body p-3 text-center">
+                        <div class="text-muted small mb-1">إجمالي الصيانة</div>
+                        <div class="h5 fw-bold mb-0 text-primary">
+                            {{ number_format($displayReadings->filter(fn($r) => !$r->client->is_offered)->sum('maintenance_cost'), 2) }} $
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md">
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-body p-3 text-center">
+                        <div class="text-muted small mb-1">إجمالي الرصيد السابق</div>
+                        <div class="h5 fw-bold mb-0 text-primary">
+                            {{ number_format($displayReadings->filter(fn($r) => !$r->client->is_offered)->sum('previous_balance'), 2) }} $
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md">
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-body p-3 text-center">
+                        <div class="text-muted small mb-1">إجمالي المبلغ المستحق</div>
+                        <div class="h5 fw-bold mb-0 text-danger">
+                            {{ number_format($displayReadings->filter(fn($r) => !$r->client->is_offered)->sum('total_due'), 2) }} $
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+    @endif
 
-        <div class="card-body">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="card-body p-4">
             <!-- Search and Client Selection -->
-            <div class="row mb-4">
+            <div class="row g-3 mb-4">
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">ابحث عن المشترك</label>
-                    <div class="input-group">
+                    <label class="form-label fw-bold text-secondary"><i class="bi bi-search me-1"></i> ابحث عن المشترك</label>
+                    <div class="input-group overflow-hidden rounded-pill shadow-sm border">
                         <input type="text" 
                             wire:model="search" 
                             wire:keydown.enter="handleSearch"
-                            class="form-control" 
+                            class="form-control border-0" 
                             placeholder="اكتب اسم المشترك أو رقمه..."
                             wire:loading.attr="disabled"
-                            style="text-align: right;">
-                        <button class="btn btn-outline-secondary" type="button" wire:click="handleSearch">
-                            <i class="bi bi-search"></i>
+                            style="text-align: right; box-shadow: none;">
+                        <button class="btn btn-white border-0" type="button" wire:click="handleSearch">
+                            <i class="bi bi-search text-secondary"></i>
                         </button>
                     </div>
-                    <div wire:loading wire:target="handleSearch" class="small text-muted mt-1">
+                    <div wire:loading wire:target="handleSearch" class="small text-muted mt-1 px-2">
                         <i class="bi bi-arrow-repeat spinner me-1"></i> جاري البحث...
                     </div>
                 </div>
                 
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">المشترك المحدد</label>
-                    <select wire:model.live="selectedClientId" class="form-select" style="text-align: right;">
-                        <option value="">-- اختر المشترك --</option>
-                        @foreach($clients as $client)
-                            <option value="{{ $client->id }}" wire:key="client-{{ $client->id }}">
-                                {{ $client->id }} - {{ $client->full_name }} 
-                            </option>
-                        @endforeach
-                    </select>
+                    <label class="form-label fw-bold text-secondary"><i class="bi bi-person-check me-1"></i>اختيار مشترك</label>
+                    <div class="shadow-sm rounded-pill overflow-hidden border">
+                        <select wire:model.live="selectedClientId" class="form-select border-0" style="text-align: right; box-shadow: none;">
+                            <option value="">-- اختر المشترك --</option>
+                            @foreach($clients as $client)
+                                <option value="{{ $client->id }}" wire:key="client-{{ $client->id }}">
+                                    {{ $client->id }} - {{ $client->full_name }} 
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
             </div>
 
             @if($search || $selectedClientId)
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <button wire:click="resetFilters" class="btn btn-outline-primary btn-sm">
+                <div class="row mb-4">
+                    <div class="col-12 text-end">
+                        <button wire:click="resetFilters" class="btn btn-outline-success rounded-pill btn-sm px-3">
                             <i class="bi bi-arrow-clockwise me-1"></i> عرض جميع القراءات
                         </button>
                     </div>
                 </div>
             @endif
 
-            <!-- Readings Table -->
             @if($displayReadings->count())
-                <!-- Statistics (Screen Only) -->
-                <div class="row mb-4 no-print">
-                    <div class="col-md-12">
-                        <div class="card bg-light">
-                            <div class="card-body py-2">
-                                <div class="row text-center fw-bold">
-                                    <div class="col border-end">
-                                        <div>إجمالي التقدمة</div>
-                                        <div>{{ $displayReadings->filter(fn($r) => $r->client->is_offered)->sum('consumption') }} k.w</div>
-                                   </div>
-                                    <div class="col border-end">
-                                        <div>إجمالي الاستهلاك</div>
-                                        <div>{{ $displayReadings->filter(fn($r) => !$r->client->is_offered)->sum('consumption') }} k.w</div>
-                                   </div>
-                                    <div class="col border-end">
-                                        <div>إجمالي مبلغ هذا الشهر</div>
-                                        <div>{{ number_format(
-                                                $displayReadings
-                                                    ->filter(fn($r) => !$r->client->is_offered)
-                                                    ->sum('amount'),
-                                                2
-                                            ) }} $
-                                        </div>
-                                    </div>
-                                    <div class="col border-end">
-                                        <div>إجمالي الرصيد السابق</div>
-                                        <div>{{ number_format(
-                                                $displayReadings
-                                                    ->filter(fn($r) => !$r->client->is_offered)
-                                                    ->sum('previous_balance'),
-                                                2
-                                            ) }} $
-                                        </div>
-                                    </div>
-                                    <div class="col">
-                                        <div>إجمالي المبلغ المستحق</div>
-                                        <div>{{ number_format(
-                                                $displayReadings
-                                                    ->filter(fn($r) => !$r->client->is_offered)
-                                                    ->sum('total_due'),
-                                                2
-                                            ) }} $
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="table-responsive" style="max-height: 48vh; overflow-y: auto;">
-                    <table class="table table-hover text-center align-middle">
+                <div class="table-responsive rounded-3 border" style="max-height: 43vh; overflow-y: auto;">
+                    <table class="table table-hover text-center align-middle mb-0;">
                         <thead class="table-secondary" style="position: sticky; top: 0; z-index: 1;">
-                            <tr>
+                            <tr class="text-uppercase small fw-bold">
                                 <th>✓</th>
-                                <th>الرقم</th>
+                                <th style="width: 10px;">الرقم</th>
                                 <th>الاسم الكامل</th>
-                                <th>العداد السابق</th>
-                                <th>العداد الحالي</th>
-                                <th>الاستهلاك</th>
-                                <th>سعر الكيلو</th>
-                                <th>سعر الاشتراك</th>
-                                <th>مبلغ هذا الشهر</th>
-                                <th>الصيانة</th>
-                                <th>الرصيد السابق</th>
-                                <th>الإجمالي المستحق</th>
+                                <th>السابق</th>
+                                <th style="width: 150px;">الحالي</th>
+                                <th>الاستهلاك k.w</th>
+                                <th>سعر الكيلو $</th>
+                                <th>سعر الاشتراك $</th>
+                                <th>المبلغ $</th>
+                                <th>الصيانة $</th>
+                                <th>الرصيد السابق $</th>
+                                <th>الإجمالي المستحق $</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -281,44 +297,45 @@
                                         @endif
                                     </td>
 
-                                    <td>{{ $reading->consumption }} k.w</td>
+                                    <td>{{ $reading->consumption }}</td>
                                     <td>
                                         @if(!$isOffered)
-                                            {{ number_format(optional($reading->client->user->kilowattPrice)->price ?? 0, 2) }} $
+                                            {{ number_format(optional($reading->client->user->kilowattPrice)->price ?? 0, 2) }}
                                         @else
                                             -
                                         @endif
                                     </td>
                                     <td>
                                         @if(!$isOffered)
-                                            {{ number_format(optional($reading->client->meterCategory)->price?? 0, 2) }} $
-                                        @else
-                                            -
-                                        @endif
-                                    <td>
-                                        @if(!$isOffered)
-                                            {{ number_format($reading->amount, 2) }} $
+                                            {{ number_format(optional($reading->client->meterCategory)->price?? 0, 2) }}
                                         @else
                                             -
                                         @endif
                                     </td>
                                     <td>
                                         @if(!$isOffered)
-                                            {{ number_format($reading->maintenance_cost, 2) }} $
+                                            {{ number_format($reading->amount, 2) }}
                                         @else
                                             -
                                         @endif
                                     </td>
                                     <td>
                                         @if(!$isOffered)
-                                            {{ number_format($reading->previous_balance, 2) }} $
+                                            {{ number_format($reading->maintenance_cost, 2) }}
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if(!$isOffered)
+                                            {{ number_format($reading->previous_balance, 2) }}
                                         @else
                                             -
                                         @endif
                                     </td>
                                     <td class="fw-bold text-primary">
                                         @if(!$isOffered)
-                                            {{ number_format($reading->total_due, 2) }} $
+                                            {{ number_format($reading->total_due, 2) }}
                                         @else
                                             -
                                         @endif

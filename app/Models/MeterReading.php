@@ -83,16 +83,23 @@ class MeterReading extends Model
             ->first();
     }
 
-    public static function latestPerActiveClient(int $userId)
+    public static function latestMonthReadings(int $userId)
     {
-        return self::whereHas('client', fn ($q) => 
-                $q->active()
-                ->where('user_id', $userId)
-            )
-            ->orderByDesc('reading_for_month')
+        // 1. Find the latest reading_for_month for this user's clients
+        $latestDate = self::whereHas('client', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        })->max('reading_for_month');
+
+        if (!$latestDate) {
+            return collect();
+        }
+
+        // 2. Get all readings for that month belonging to this user's clients
+        return self::whereHas('client', function ($q) use ($userId) {
+                $q->where('user_id', $userId);
+            })
+            ->where('reading_for_month', $latestDate)
             ->get()
-            ->groupBy('client_id')
-            ->map(fn ($group) => $group->first()) 
             ->sortBy('client_id')
             ->values();
     }

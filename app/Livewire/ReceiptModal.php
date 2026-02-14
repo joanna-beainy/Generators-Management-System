@@ -230,7 +230,6 @@ class ReceiptModal extends Component
                     'total_due' => $latestReading->total_due ?? 0,
                     'amount_paid' => 0, // Bulk receipts show current due, not payments
                     'remaining_after_payment' => $latestReading->remaining_amount ?? 0,
-                    'payment_id' => 'BULK-' . $client->id . '-' . time(),
                     'user_name' => $client->user->name,
                     'user_phones' => $client->user->phoneNumbers->pluck('phone_number')->implode(' - '),
                 ];
@@ -252,19 +251,21 @@ class ReceiptModal extends Component
             // Check if user can view this client's data
             $this->authorize('view', $client);
 
-            $latestReading = MeterReading::latestCompletedForClient($client->id);
+            //Meter reading for this payment 
+            $meterReading = $payment->meterReading;
 
-            if (!$latestReading) {
+
+            if (!$meterReading) {
                 $this->setAlert('لا توجد قراءة للمشترك', 'danger');
                 return [];
             }
 
             $kilowattPrice = $client->user->kilowattPrice->price ?? 0;
-            $consumptionAmount = round($latestReading->consumption * $kilowattPrice * 2) / 2;  // round amounts to the nearest 0.5 (half dollar)
-            $readingMonth = $latestReading->reading_for_month;
+            $consumptionAmount = round($meterReading->consumption * $kilowattPrice * 2) / 2;  // round amounts to the nearest 0.5 (half dollar)
+            $readingMonth = $meterReading->reading_for_month;
             $arabicMonth = $this->getArabicMonthName($readingMonth);
             $amountPaid = $payment->amount + $payment->discount;
-            $remainingAfterPayment = $latestReading->remaining_amount;
+            $remainingAfterPayment = $meterReading->remaining_amount;
 
             return [
                 'client_id' => $client->id,
@@ -274,16 +275,15 @@ class ReceiptModal extends Component
                 'kilowatt_price' => $kilowattPrice,
                 'meter_category' => $client->meterCategory->category ?? 'N/A',
                 'meter_category_price' => $client->meterCategory->price ?? 0,
-                'previous_meter' => $latestReading->previous_meter ?? 0,
-                'current_meter' => $latestReading->current_meter ?? 0,
-                'consumption' => $latestReading->consumption ?? 0,
+                'previous_meter' => $meterReading->previous_meter ?? 0,
+                'current_meter' => $meterReading->current_meter ?? 0,
+                'consumption' => $meterReading->consumption ?? 0,
                 'consumption_amount' => $consumptionAmount,
-                'maintenance_cost' => $latestReading->maintenance_cost ?? 0,
-                'previous_balance' => $latestReading->previous_balance ?? 0,
-                'total_due' => $latestReading->total_due ?? 0,
+                'maintenance_cost' => $meterReading->maintenance_cost ?? 0,
+                'previous_balance' => $meterReading->previous_balance ?? 0,
+                'total_due' => $meterReading->total_due ?? 0,
                 'amount_paid' => $amountPaid,
                 'remaining_after_payment' => $remainingAfterPayment,
-                'payment_id' => $payment->id,
                 'user_name' => $client->user->name,
                 'user_phones' => $client->user->phoneNumbers->pluck('phone_number')->implode(' - '),
             ];

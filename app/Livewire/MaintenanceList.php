@@ -7,6 +7,7 @@ use Livewire\Component;
 use App\Models\Maintenance;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Access\AuthorizationException;
+use Native\Desktop\Facades\Alert;
 
 class MaintenanceList extends Component
 {
@@ -46,6 +47,17 @@ class MaintenanceList extends Component
 
         if ($this->client) {
             $this->maintenances = $this->client->maintenances;
+        }
+    }
+
+    public function confirmDelete($id)
+    {
+        $buttonIndex = Alert::title('تأكيد الحذف')
+            ->buttons(['الغاء', 'نعم'])
+            ->show('هل أنت متأكد من حذف هذه الصيانة ؟');
+
+        if ($buttonIndex === 1) {
+            $this->deleteMaintenance($id);
         }
     }
 

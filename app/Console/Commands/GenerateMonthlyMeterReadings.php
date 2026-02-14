@@ -8,6 +8,7 @@ use App\Models\MeterReading;
 use Illuminate\Support\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Auth;
+use Native\Desktop\Facades\Notification;
 
 class GenerateMonthlyMeterReadings extends Command
 {
@@ -49,7 +50,7 @@ class GenerateMonthlyMeterReadings extends Command
                 $amount = 0; // Will be calculated when meter is read
                 $maintenanceCosts = Maintenance::forClient($client->id)
                     ->forMonth($targetMonth)
-                    ->whereRaw('DAY(created_at) < 28')
+                    ->whereRaw("strftime('%d', created_at) < '28'")
                     ->sum('amount');
                 $previousBalance = 0; // TEMPORARY - will be calculated when meter is read
                 $remainingAmount = $maintenanceCosts; // Only maintenance for now
@@ -73,5 +74,14 @@ class GenerateMonthlyMeterReadings extends Command
         }
 
         $this->info('🎯 Monthly meter readings generated successfully.');
+
+        try {
+            Notification::new()
+                ->title('📅 Readings Generated')
+                ->message("Monthly meter readings for all active clients have been generated.")
+                ->show();
+        } catch (\Exception $e) {
+            // Ignore notification failures
+        }
     }
 }

@@ -1,46 +1,45 @@
 <div class="container mt-2" dir="rtl" x-data>
-    <div class="card shadow-sm">
-        <div class="card-header bg-light text-dark no-print">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="mb-0">
-                        <i class="bi bi-clipboard-data-fill text-success me-2"></i>
-                        تقرير شهري لقراءة العدادات
-                    </h5>
-                    <small class="text-muted">عن شهر {{ $arabicMonthName }} {{ $selectedYear }}</small>
-                </div>
-                <div class="d-flex gap-2">
-                    <button type="button" 
-                            class="btn btn-success btn-sm"
-                            onclick="window.print()">
-                        <i class="bi bi-printer me-1"></i>
-                        طباعة النموذج
-                    </button>
-                    <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-house me-1"></i>
-                        إغلاق
-                    </a>
-                </div>
-            </div>
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <div>
+            <h3 class="fw-bold text-dark mb-0">
+                <i class="bi bi-clipboard-data-fill text-success me-2"></i> تقرير شهري لقراءة العدادات
+            </h3>
+            <p class="text-secondary mb-0 mt-1">
+                <i class="bi bi-calendar3 me-1"></i> عن شهر {{ $arabicMonthName }} {{ $selectedYear }}
+            </p>
         </div>
-        
-        <div class="card-body">
-            {{-- Alpine.js Auto-Disappearing Alert --}}
-            @if ($alertMessage)
-                <div 
-                    x-data="{ show: true }" 
-                    x-show="show" 
-                    x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
-                    x-transition:leave="transition ease-in duration-300"
-                    x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
-                    class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4 no-print">
-                    <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
-                    {{ $alertMessage }}
-                    <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
-                </div>
-            @endif
-            
+        <div class="d-flex gap-2">
+            <button type="button" 
+                    class="btn btn-success rounded-pill shadow-sm px-4"
+                    onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> طباعة النموذج
+            </button>
+            <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary rounded-pill shadow-sm px-4">
+                <i class="bi bi-x-circle me-1"></i> إغلاق
+            </a>
+        </div>
+    </div>
+
+    <!-- Alpine.js Auto-Disappearing Alert -->
+    @if ($alertMessage)
+        <div 
+            x-data="{ show: true }" 
+            x-show="show" 
+            x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
+            x-transition:leave="transition ease-in duration-300"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4 no-print">
+            <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
+            {{ $alertMessage }}
+            <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
+        </div>
+    @endif
+
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="card-body p-4">
+
             <!-- Printable Header -->
             <div class="print-header text-center mb-3 d-none d-print-block">
                 <h6 class="fw-bold mb-1">تقرير شهري لقراءة العدادات</h6>
@@ -48,12 +47,12 @@
             </div>
 
             @if(count($clients))
-                <div class="table-responsive" style="max-height: 73vh; overflow-y: auto;">
-                    <table class="table table-bordered text-center align-middle" id="report-table">
-                        <thead class="table-light print-table-header">
-                            <tr>
-                                <th>رقم المشترك</th>
-                                <th>اسم المشترك</th>
+                <div class="table-responsive rounded-3 border" style="max-height: 68vh; overflow-y: auto;">
+                    <table class="table table-hover text-center align-middle mb-0" id="report-table">
+                        <thead class="table-secondary print-table-header" style="position: sticky; top: 0; z-index: 1;">
+                            <tr class="text-uppercase small fw-bold">
+                                <th style="width: 100px;">رقم المشترك</th>
+                                <th style="width: 200px;">اسم المشترك</th>
                                 <th>العداد السابق</th>
                                 <th>العداد الحالي</th>
                             </tr>
@@ -119,7 +118,7 @@
                 border: 1px solid #000 !important;
                 border-collapse: collapse !important;
                 width: 100%;
-                font-size: 12px !important;
+                font-size: 14px !important;
                 color: #000 !important;
             }
 

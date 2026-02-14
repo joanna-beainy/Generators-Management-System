@@ -91,6 +91,18 @@ class PaymentEntry extends Component
         $this->loadClients();
     }
 
+    public function handleSearch()
+    {
+        $this->selectedClientId = null;
+        $this->loadClients();
+        $this->clearAlert();
+        
+        // Auto-select if only one result
+        if ($this->clients->count() === 1) {
+            $this->selectedClientId = $this->clients->first()->id;
+        }
+    }
+
     public function loadClients()
     {
         $this->clients = Client::where('user_id', Auth::id())
@@ -105,19 +117,6 @@ class PaymentEntry extends Component
                 $client->current_remaining_lbp = $client->total_remaining_amount * $this->exchangeRate;
                 return $client;
             });
-    }
-
-    public function handleSearch()
-    {
-        $this->loadClients();
-        $this->clearAlert();
-        
-        // Auto-select if only one result
-        if ($this->clients->count() === 1) {
-            $this->selectedClientId = $this->clients->first()->id;
-        } else {
-            $this->selectedClientId = null;
-        }
     }
 
     public function updatedSelectedClientId($value)

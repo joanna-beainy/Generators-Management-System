@@ -3,7 +3,8 @@
 @section('title', 'لوحة التحكم')
 
 @section('content')
-<div class="row justify-content-center" 
+<!-- min hight =cover the screen without scrolling  -->
+<div class="row justify-content-center align-items-center" 
      x-data="{
         showAlert: false,
         alertMessage: '',
@@ -63,7 +64,7 @@
                     @php
                         $buttons = [
                             ['label' => 'إدخال دفعات', 'route' => 'payment.entry', 'icon' => 'bi-wallet2'],
-                            ['label' => 'إدخال العدادات', 'route' => 'meter.readings', 'icon' => 'bi-speedometer2'],
+                            ['label' => 'إدخال العدادات', 'route' => 'meter.readings', 'icon' => 'bi-speedometer2', 'confirm' => true],
                             ['label' => 'عرض لائحة المشتركين و تعديلها', 'route' => 'clients.index', 'icon' => 'bi-people'],
                             ['label' => 'إدخال مشترك', 'route' => 'clients.create', 'icon' => 'bi-person-plus'],
                             ['label' => 'إدخال الأسعار', 'route' => 'manage.prices', 'icon' => 'bi-cash-stack'],
@@ -73,72 +74,52 @@
                             ['label' => ' المولدات و الصيانة', 'route' => 'manage.generators', 'icon' => 'bi-lightning'],                            
                             ['label' => 'إدخال صيانة للمشترك', 'route' => 'maintenance.entry', 'icon' => 'bi-tools'],
                             ['label' => 'تقرير عن المبالغ المستحقة', 'route' => 'outstanding.amounts.report', 'icon' => 'bi-currency-dollar'],
-                            ['label' => 'تقرير شراء/استهلاك الوقود ', 'route' => 'fuel.purchase.report', 'icon' => 'bi-fuel-pump-diesel'],                           
-
+                            ['label' => 'تقرير شراء/استهلاك الوقود ', 'route' => 'fuel.purchase.report', 'icon' => 'bi-fuel-pump-diesel'],
+                            ['label' => 'مصاريف الصيانة للمشترك', 'type' => 'view-maintenance', 'icon' => 'bi-tools'],
+                            ['label' => 'طباعة جميع الإيصالات', 'type' => 'showBulkReceipts', 'icon' => 'bi-printer'],
+                            ['label' => 'تعديل سعر الصرف', 'type' => 'openExchangeRateModal', 'icon' => 'bi-currency-exchange'],
+                            ['label' => 'عرض العداد الموافق لكل مشترك', 'type' => 'view-meter', 'icon' => 'bi-speedometer2'],
+                            ['label' => 'طباعة إيصال مشترك', 'type' => 'print-receipt', 'icon' => 'bi-receipt-cutoff'],
                         ];
                     @endphp
 
                     @foreach ($buttons as $button)
                         <div class="col">
-                            <a href="{{ route($button['route']) }}" 
-                               class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
-                                <i class="{{ $button['icon'] }}"></i>
-                                <span>{{ $button['label'] }}</span>
-                            </a>
+                            @if(isset($button['route']))
+                                @if(isset($button['confirm']) && $button['confirm'] && (time() - session('auth.password_confirmed_at', 0)) > 10800) {{-- 3 hours timeout --}}
+                                    <button type="button" 
+                                            onclick="Livewire.dispatch('confirmPassword', { data: '{{ route($button['route']) }}' })"
+                                            class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
+                                        <i class="{{ $button['icon'] }}"></i>
+                                        <span>{{ $button['label'] }}</span>
+                                    </button>
+                                @else
+                                    <a href="{{ route($button['route']) }}" 
+                                       class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
+                                        <i class="{{ $button['icon'] }}"></i>
+                                        <span>{{ $button['label'] }}</span>
+                                    </a>
+                                @endif
+                            @elseif(isset($button['type']))
+                                @php
+                                    $dispatch = match($button['type']) {
+                                        'print-receipt' => "Livewire.dispatch('openClientSearch', { actionType: 'print-receipt' })",
+                                        'openExchangeRateModal' => "Livewire.dispatch('openExchangeRateModal')",
+                                        'view-meter' => "Livewire.dispatch('openClientSearch', { actionType: 'view-meter' })",
+                                        'view-maintenance' => "Livewire.dispatch('openClientSearch', { actionType: 'view-maintenance' })",
+                                        'showBulkReceipts' => "Livewire.dispatch('showBulkReceipts')",
+                                        default => ""
+                                    };
+                                @endphp
+                                <button type="button" 
+                                        onclick="{{ $dispatch }}"
+                                        class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="{{ $button['icon'] }}"></i>
+                                    <span>{{ $button['label'] }}</span>
+                                </button>
+                            @endif
                         </div>
                     @endforeach
-
-
-                    <!-- عرض مصاريف الصيانة -->
-                    <div class="col">
-                        <button type="button" 
-                                onclick="Livewire.dispatch('openClientSearch', { actionType: 'view-maintenance' })"
-                                class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-tools"></i>
-                            <span>مصاريف الصيانة للمشترك</span>
-                        </button>
-                    </div>
-
-                    <!-- طباعة جميع الإيصالات -->
-                    <div class="col">
-                        <button type="button" 
-                                onclick="Livewire.dispatch('showBulkReceipts')"
-                                class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-printer"></i>
-                            <span>طباعة جميع الإيصالات</span>
-                        </button>
-                    </div>
-
-                    <!-- تعديل سعر الصرف -->
-                    <div class="col">
-                        <button type="button" 
-                                onclick="Livewire.dispatch('openExchangeRateModal')"
-                                class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-currency-exchange"></i>
-                            <span>تعديل سعر الصرف</span>
-                        </button>
-                    </div>
-
-                     <!-- عرض العداد الموافق لكل مشترك -->
-                    <div class="col">
-                        <button type="button" 
-                                onclick="Livewire.dispatch('openClientSearch', { actionType: 'view-meter' })"
-                                class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-speedometer2"></i>
-                            <span>عرض العداد الموافق لكل مشترك</span>
-                        </button>
-                    </div>
-
-                    <!-- طباعة إيصال مشترك -->
-                    <div class="col">
-                        <button type="button" 
-                                onclick="Livewire.dispatch('openClientSearch', { actionType: 'print-receipt' })"
-                                class="btn btn-outline-secondary w-100 py-3 rounded-3 d-flex align-items-center justify-content-center gap-2">
-                            <i class="bi bi-receipt-cutoff"></i>
-                            <span>طباعة إيصال مشترك</span>
-                        </button>
-                    </div>
-                    
                 </div>
             </div>
         </div>

@@ -24,6 +24,8 @@ class ClientMeterReadings extends Component
     public function mount($clientId)
     {
         try {
+            $this->readings = collect(); // Initialize as collection
+            
             $this->client = Client::where('user_id', Auth::id())->find($clientId);
 
             if (!$this->client) {
@@ -39,8 +41,10 @@ class ClientMeterReadings extends Component
 
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض قراءات العدادات', 'danger');
+            $this->readings = collect();
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تحميل بيانات المشترك', 'danger');
+            $this->readings = collect();
         }
     }
 
@@ -68,7 +72,7 @@ class ClientMeterReadings extends Component
         $this->years = MeterReading::whereHas('client', function ($query) {
                 $query->where('user_id', Auth::id());
             })
-            ->selectRaw('YEAR(reading_for_month) as year')
+            ->selectRaw("strftime('%Y', reading_for_month) as year")
             ->distinct()
             ->orderBy('year', 'desc')
             ->pluck('year')

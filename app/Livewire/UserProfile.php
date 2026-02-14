@@ -6,9 +6,11 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Native\Desktop\Facades\Alert;
 
 class UserProfile extends Component
 {
+    public $name;
     public $password;
     public $password_confirmation;
     public $phoneNumbers = [];
@@ -19,6 +21,7 @@ class UserProfile extends Component
     public function mount()
     {
         $user = Auth::user();
+        $this->name = $user->name;
         $this->phoneNumbers = $user->phoneNumbers->pluck('phone_number', 'id')->toArray();
     }
 
@@ -31,19 +34,34 @@ class UserProfile extends Component
     public function updateProfile()
     {
         $this->validate([
+            'name' => 'required|string|max:255',
             'password' => 'nullable|string|min:6|confirmed',
         ], [
+            'name.required' => 'يرجى إدخال الاسم.',
+            'name.max' => 'الاسم طويل جداً.',
             'password.min' => 'يجب أن تكون كلمة المرور 6 أحرف على الأقل.',
             'password.confirmed' => 'تأكيد كلمة المرور غير مطابق.',
         ]);
 
         try {
             $user = Auth::user();
+            $updated = false;
+
+            // Update name if changed
+            if ($this->name !== $user->name) {
+                $user->name = $this->name;
+                $updated = true;
+            }
+
+            // Update password if provided
             if ($this->password) {
                 $user->password = Hash::make($this->password);
+                $updated = true;
+            }
+
+            if ($updated) {
                 $user->save();
-                
-                $this->setAlert('تم تحديث كلمة المرور بنجاح.', 'success');
+                $this->setAlert('تم تحديث المعلومات بنجاح.', 'success');
                 $this->reset(['password', 'password_confirmation']);
             } else {
                 $this->setAlert('لم يتم إجراء أي تغييرات.', 'info');
@@ -76,6 +94,17 @@ class UserProfile extends Component
             throw $e;
         }catch (\Exception $e) {
             $this->setAlert('حدث خطأ أثناء إضافة الرقم.', 'danger');
+        }
+    }
+
+    public function confirmDeletePhone($id)
+    {
+        $buttonIndex = Alert::title('تأكيد الحذف')
+            ->buttons(['الغاء', 'نعم'])
+            ->show('هل أنت متأكد من حذف هذا الرقم ؟');
+
+        if ($buttonIndex === 1) {
+            $this->deletePhone($id);
         }
     }
 

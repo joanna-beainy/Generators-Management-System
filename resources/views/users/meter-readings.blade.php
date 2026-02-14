@@ -1,4 +1,4 @@
-@extends('layouts.app') {{-- or your preferred layout --}}
+@extends('layouts.app')
 
 @section('title', 'إدخال قراءات العدادات')
 

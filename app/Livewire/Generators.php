@@ -8,6 +8,7 @@ use App\Models\Generator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
+use Native\Desktop\Facades\Alert;
 
 class Generators extends Component
 {
@@ -19,6 +20,17 @@ class Generators extends Component
 
     // Listen for the generator-deleted event to reload generators
     protected $listeners = ['generator-deleted' => 'loadGenerators'];
+
+    public function confirmDelete($id)
+    {
+        $buttonIndex = Alert::title('تأكيد الحذف')
+            ->buttons(['الغاء', 'نعم'])
+            ->show('هل أنت متأكد من حذف هذا المولد؟');
+
+        if ($buttonIndex === 1) {
+            $this->deleteGenerator($id);
+        }
+    }
 
     public function mount()
     {

@@ -57,7 +57,7 @@ class MonthlyPaymentReport extends Component
             $this->years = Payment::whereHas('client', function ($query) {
                     $query->where('user_id', Auth::id());
                 })
-                ->selectRaw('YEAR(paid_at) as year')
+                ->selectRaw("strftime('%Y', paid_at) as year")
                 ->distinct()
                 ->orderBy('year', 'desc')
                 ->pluck('year')

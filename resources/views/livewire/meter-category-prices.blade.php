@@ -1,11 +1,12 @@
 <div class="d-flex justify-content-center">
-    <div class="card border-0 rounded-4 w-100" style="max-width: 950px;" dir="rtl">
-        <div class="card-header bg-white text-center fw-bold rounded-top-4 py-3">
-            <i class="bi bi-tags me-2 text-primary h4"></i>
-            <span class="text-dark">فئات الاشتراك</span>
+    <div class="card shadow-sm border-0 rounded-4 w-100 overflow-hidden" style="max-width: 950px;" dir="rtl">
+        <div class="card-header bg-success bg-opacity-10 text-center py-2 border-0">
+            <h5 class="mb-0 fw-bold text-success">
+                <i class="bi bi-tags me-2"></i> فئات الاشتراك
+            </h5>
         </div>
-        <div class="card-body p-4">
-            {{-- Alpine.js Auto-Disappearing Alert --}}
+        <div class="card-body p-4 bg-white">
+            <!-- Alpine.js Auto-Disappearing Alert -->
             @if ($alertMessage)
                 <div 
                     x-data="{ show: true }" 
@@ -14,7 +15,7 @@
                     x-transition:leave="transition ease-in duration-300"
                     x-transition:leave-start="opacity-100"
                     x-transition:leave-end="opacity-0"
-                    class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4">
+                    class="alert alert-{{ $alertType }} border-0 text-center rounded-3 shadow-sm mb-4">
                     <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
                     {{ $alertMessage }}
                     <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
@@ -22,68 +23,75 @@
             @endif
 
 
-            {{-- Toggle Add Form --}}
+            <!-- Toggle Add Form -->
             <div class="text-start mb-4">
-                <button type="button" class="btn btn-outline-success rounded-pill shadow-sm"
+                <button type="button" class="btn btn-outline-success rounded-pill shadow-sm px-4 fw-bold"
                         wire:click="toggleAddForm">
-                    <i class="bi bi-plus-circle me-1"></i>
+                    <i class="bi {{ $showAddForm ? 'bi-dash-lg' : 'bi-plus-lg' }} me-1"></i>
                     {{ $showAddForm ? 'إخفاء النموذج' : 'إضافة فئة جديدة' }}
                 </button>
             </div>
 
-            {{-- Add Category Form --}}
+            <!-- Add Category Form -->
             @if ($showAddForm)
-                <form wire:submit.prevent="addCategory" class="mb-4">
-                    <div class="row g-3">
-                        <div class="col-md-5">
-                            <input type="text" class="form-control rounded-3 shadow-sm @error('newCategoryName') is-invalid @enderror"
-                                   placeholder="اسم الفئة" wire:model.defer="newCategoryName">
-                            @error('newCategoryName') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                <div class="bg-light p-4 rounded-4 mb-4 border-0 shadow-sm" x-transition>
+                    <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-plus-circle me-1 text-success"></i> تفاصيل الفئة الجديدة</h6>
+                    <form wire:submit.prevent="addCategory">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold text-secondary">اسم الفئة</label>
+                                <input type="text" class="form-control rounded-pill border shadow-sm px-3 @error('newCategoryName') is-invalid @enderror"
+                                       placeholder="اسم الفئة" wire:model.defer="newCategoryName" style="box-shadow: none;">
+                                @error('newCategoryName') <div class="invalid-feedback ps-2">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary">السعر ($)</label>
+                                <input type="number" step="0.01"
+                                       class="form-control rounded-pill border shadow-sm px-3 @error('newCategoryPrice') is-invalid @enderror"
+                                       placeholder="0.00" wire:model.defer="newCategoryPrice" style="direction: rtl; box-shadow: none;">
+                                @error('newCategoryPrice') <div class="invalid-feedback ps-2">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-success w-100 rounded-pill shadow-sm py-2 fw-bold">
+                                    <i class="bi bi-check-lg me-1"></i> إضافة الفئة
+                                </button>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <input type="number" step="0.01"
-                                   class="form-control rounded-3 shadow-sm @error('newCategoryPrice') is-invalid @enderror"
-                                   placeholder="السعر" wire:model.defer="newCategoryPrice" style="direction: rtl;">
-                            @error('newCategoryPrice') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="btn btn-success w-100 rounded-pill shadow-sm">
-                                <i class="bi bi-check2-circle me-1"></i> إضافة
-                            </button>
-                        </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             @endif
 
-            {{-- Update Existing Categories --}}
+            <!-- Update Existing Categories -->
             <form wire:submit.prevent="updatePrices">
-                <div class="table-responsive">
-                    <table class="table table-hover text-center align-middle rounded-3">
-                        <thead class="table-light">
-                            <tr>
+                <div class="table-responsive rounded-3 border" style="max-height: 31vh; overflow-y: auto;">
+                    <table class="table table-hover text-center align-middle mb-0">
+                        <thead class="table-secondary" style="position: sticky; top: 0; z-index: 1;">
+                            <tr class="small fw-bold text-uppercase">
                                 <th>الفئة</th>
-                                <th style="width: 220px;">السعر</th>
+                                <th style="width: 220px;">السعر الحالي ($)</th>
                                 <th>إجراء</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($categories as $index => $category)
-                                <tr>
-                                    <td class="fw-semibold">{{ $category['name'] }}</td>
+                                <tr wire:key="category-row-{{ $category['id'] }}">
+                                    <td class="fw-bold text-dark">{{ $category['name'] }}</td>
                                     <td>
-                                        <input type="number" step="0.01"
-                                               class="form-control text-center rounded-3 shadow-sm @error("categories.$index.price") is-invalid @enderror"
-                                               wire:model.defer="categories.{{ $index }}.price"
+                                        <div class="input-group input-group-sm shadow-sm rounded-pill overflow-hidden border mx-auto" style="max-width: 150px;">
+                                            <input type="number" step="0.01"
+                                                   class="form-control border-0 text-center @error("categories.$index.price") is-invalid @enderror"
+                                                   wire:model.defer="categories.{{ $index }}.price"
+                                                   style="box-shadow: none;">
+                                        </div>
                                         @error("categories.$index.price") 
-                                            <div class="invalid-feedback">{{ $message }}</div> 
+                                            <div class="text-danger small mt-1 fw-bold">{{ $message }}</div> 
                                         @enderror
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-outline-danger btn-sm rounded-pill shadow-sm"
-                                                x-data="{ categoryId: {{ $category['id'] }} }"
-                                                @click="if(confirm('هل أنت متأكد من حذف هذه الفئة؟')) { $wire.call('deleteCategory', categoryId) }"
+                                        <button type="button" class="btn btn-link text-danger p-0 text-decoration-none"
+                                                wire:click="confirmDelete({{ $category['id'] }})"
                                                 title="حذف">
-                                            <i class="bi bi-trash"></i>
+                                            <i class="bi bi-trash3 h5 mb-0"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -93,8 +101,8 @@
                 </div>
 
                 <div class="text-center mt-4">
-                    <button type="submit" class="btn btn-success px-5 py-2 rounded-pill shadow-sm">
-                        <i class="bi bi-arrow-repeat me-1"></i> تحديث الأسعار
+                    <button type="submit" class="btn btn-success px-5 py-2 rounded-pill shadow-sm fw-bold">
+                        <i class="bi bi-check-all me-1 h5 mb-0"></i> حفظ جميع التعديلات
                     </button>
                 </div>
             </form>

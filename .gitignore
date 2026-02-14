@@ -22,3 +22,26 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+npm-debug.log*
+
+# NativePHP & SQLite
+/nativephp/electron/dist
+/packages/*
+!/packages/php-bin
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+.nativephp/
+
+/storage/app/license.lic
+
+# Laravel Framework Storage
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/framework/testing/*
+!/storage/framework/cache/data/.gitignore
+!/storage/framework/sessions/.gitignore
+!/storage/framework/views/.gitignore
+!/storage/framework/testing/.gitignore

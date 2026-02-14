@@ -23,21 +23,23 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'name' => 'required|string',
             'password' => 'required|string',
-            ],
-        );
+        ]);
 
-        if (Auth::attempt($request->only('name', 'password'), $request->boolean('remember'))) {
+        $password = $request->input('password');
+        
+        // In a single-user desktop app, we just check the password for the first user
+        $user = \App\Models\User::first();
+
+        if ($user && \Illuminate\Support\Facades\Hash::check($password, $user->password)) {
+            Auth::login($user, $request->boolean('remember'));
             $request->session()->regenerate();
-
-            $user = Auth::user();
-
+            
             return redirect()->route('users.dashboard');
         }
 
         throw ValidationException::withMessages([
-            'name' => ['خطأ في كلمة السر أو الٳسم'],
+            'password' => ['كلمة المرور غير صحيحة'],
         ]);
     }
 

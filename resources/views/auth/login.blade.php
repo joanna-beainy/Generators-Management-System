@@ -13,25 +13,14 @@
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
 
-                    <div class="mb-3">
-                        <label for="name" class="form-label fw-semibold"><bdi>اسم المستخدم</bdi></label>
-                        <input type="text" 
-                               name="name" 
-                               id="name" 
-                               class="form-control form-control-lg" 
-                               value="{{ old('name') }}" 
-                               required 
-                               autofocus
-                               placeholder="أدخل اسم المستخدم">
-                    </div>
-
                     <div class="mb-4">
                         <label for="password" class="form-label fw-semibold"><bdi>كلمة المرور</bdi></label>
                         <input type="password" 
                                name="password" 
-                               id="password" 
-                               class="form-control form-control-lg" 
+                               id="password"
+                               class="form-control form-control-lg text-center @error('password') is-invalid @enderror " 
                                required
+                               autofocus
                                placeholder="••••••••">
                     </div>
 

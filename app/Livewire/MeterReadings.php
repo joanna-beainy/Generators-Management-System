@@ -60,7 +60,7 @@ class MeterReadings extends Component
             // Check if user can view meter readings
             $this->authorize('viewAny', MeterReading::class);
 
-            $this->allReadings = MeterReading::latestPerActiveClient($userId)
+            $this->allReadings = MeterReading::latestMonthReadings($userId)
                 ->load(['client.meterCategory', 'client.user.kilowattPrice', 'payments']);
 
             // Apply filters

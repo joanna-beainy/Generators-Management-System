@@ -1,63 +1,131 @@
 <div class="container mt-2" dir="rtl" x-data>
-    <div class="card shadow-sm">
-        <div class="card-header bg-light text-dark no-print">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="mb-0">
-                        <i class="bi bi-file-earmark-text-fill text-success me-2"></i>
-                        تقرير شهري للمشتركين
-                    </h5>
-                    <small class="text-muted">عن شهر {{ $arabicMonthName }}</small>
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <div>
+            <h3 class="fw-bold text-dark mb-0">
+                <i class="bi bi-file-earmark-text-fill text-success me-2"></i> تقرير شهري للمشتركين
+            </h3>
+            <p class="text-secondary mb-0 mt-1">
+                <i class="bi bi-calendar3 me-1"></i> عن شهر {{ $arabicMonthName }}
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" 
+                    class="btn btn-success rounded-pill shadow-sm px-4"
+                    onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> طباعة التقرير
+            </button>
+            <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary rounded-pill shadow-sm px-4">
+                <i class="bi bi-x-circle me-1"></i> إغلاق
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert -->
+    @if ($alertMessage)
+        <div 
+            x-data="{ show: true }" 
+            x-show="show" 
+            x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
+            x-transition:leave="transition ease-in duration-300"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4 no-print">
+            <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
+            {{ $alertMessage }}
+            <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
+        </div>
+    @endif
+
+    @if(count($readings))
+        <!-- Statistics Section -->
+        <div class="row g-3 mb-4 no-print">
+            <div class="col-md">
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-body p-3 text-center">
+                        <div class="text-muted small mb-1">إجمالي التقدمة</div>
+                        <div class="h5 fw-bold mb-0 text-info">
+                            {{ $statistics['consumption_offered'] }} <span class="small font-monospace">k.w</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="d-flex gap-2">
-                    <button type="button" 
-                            class="btn btn-success btn-sm"
-                            onclick="window.print()">
-                        <i class="bi bi-printer me-1"></i>
-                        طباعة التقرير
-                    </button>
-                    <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-house me-1"></i>
-                        إغلاق
-                    </a>
+            </div>
+            <div class="col-md">
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-body p-3 text-center">
+                        <div class="text-muted small mb-1">إجمالي الاستهلاك</div>
+                        <div class="h5 fw-bold mb-0 text-dark">
+                            {{ $statistics['consumption_regular'] }} <span class="small font-monospace">k.w</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md">
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-body p-3 text-center">
+                        <div class="text-muted small mb-1">إجمالي مبلغ الشهر</div>
+                        <div class="h5 fw-bold mb-0 text-success">
+                            {{ number_format($statistics['total_amount'], 2) }} $
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md">
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-body p-3 text-center">
+                        <div class="text-muted small mb-1">إجمالي الصيانة</div>
+                        <div class="h5 fw-bold mb-0 text-primary">
+                            {{ number_format($statistics['total_maintenance_cost'], 2) }} $
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md">
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-body p-3 text-center">
+                        <div class="text-muted small mb-1">إجمالي الرصيد السابق</div>
+                        <div class="h5 fw-bold mb-0 text-primary">
+                            {{ number_format($statistics['total_previous_balance'], 2) }} $
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md">
+                <div class="card border-0 shadow-sm rounded-4 bg-white">
+                    <div class="card-body p-3 text-center">
+                        <div class="text-muted small mb-1">إجمالي المبلغ المستحق</div>
+                        <div class="h5 fw-bold mb-0 text-danger">
+                            {{ number_format($statistics['total_due'], 2) }} $
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <div class="card-body">
-             {{-- Alpine.js Auto-Disappearing Alert --}}
-            @if ($alertMessage)
-                <div 
-                    x-data="{ show: true }" 
-                    x-show="show" 
-                    x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
-                    x-transition:leave="transition ease-in duration-300"
-                    x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
-                    class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4 no-print">
-                    <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
-                    {{ $alertMessage }}
-                    <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
-                </div>
-            @endif
+    @endif
 
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+        <div class="card-body p-4">
             <!-- Filters -->
-            <div class="row mb-4 no-print">
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">السنة</label>
-                    <select wire:model.live="selectedYear" class="form-select">
-                        @foreach($years as $year)
-                            <option value="{{ $year }}">{{ $year }}</option>
-                        @endforeach
-                    </select>
+            <div class="row g-3 mb-4 no-print">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold text-secondary"><i class="bi bi-calendar-event me-1"></i> السنة</label>
+                    <div class="shadow-sm rounded-pill overflow-hidden border">
+                        <select wire:model.live="selectedYear" class="form-select border-0" style="text-align: right; box-shadow: none;">
+                            @foreach($years as $year)
+                                <option value="{{ $year }}">{{ $year }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">الشهر</label>
-                    <select wire:model.live="selectedMonth" class="form-select">
-                        @foreach($months as $key => $month)
-                            <option value="{{ $key }}">{{ $month }}</option>
-                        @endforeach
-                    </select>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold text-secondary"><i class="bi bi-calendar-month me-1"></i> الشهر</label>
+                    <div class="shadow-sm rounded-pill overflow-hidden border">
+                        <select wire:model.live="selectedMonth" class="form-select border-0" style="text-align: right; box-shadow: none;">
+                            @foreach($months as $key => $month)
+                                <option value="{{ $key }}">{{ $month }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -68,56 +136,20 @@
             </div>
 
             @if(count($readings))
-                <!-- Statistics (Screen Only) -->
-                <div class="row mb-4 no-print">
-                    <div class="col-md-12">
-                        <div class="card bg-light">
-                            <div class="card-body py-2">
-                                <div class="row text-center fw-bold">
-                                    <div class="col border-end">
-                                        <div>إجمالي التقدمة</div>
-                                        <div>{{ $statistics['consumption_offered'] }} k.w</div>
-                                    </div>
-                                    <div class="col border-end">
-                                        <div>إجمالي الاستهلاك</div>
-                                        <div>{{ $statistics['consumption_regular'] }} k.w</div>
-                                    </div>
-                                    <div class="col border-end">
-                                        <div>إجمالي مبلغ هذا الشهر</div>
-                                        <div>{{ number_format($statistics['total_amount'], 2) }} $</div>
-                                    </div>
-                                    <div class="col border-end">
-                                        <div>إجمالي تكلفة الصيانة</div>
-                                        <div>{{ number_format($statistics['total_maintenance_cost'], 2) }} $</div>
-                                    </div>
-                                    <div class="col border-end">
-                                        <div>إجمالي الرصيد السابق</div>
-                                        <div>{{ number_format($statistics['total_previous_balance'], 2) }} $</div>
-                                    </div>
-                                    <div class="col">
-                                        <div>إجمالي المبلغ المستحق</div>
-                                        <div>{{ number_format($statistics['total_due'], 2) }} $</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Table -->
-                <div class="table-responsive" style="max-height: 48vh; overflow-y: auto;">
-                    <table class="table table-bordered text-center align-middle" id="report-table">
-                        <thead class="table-light print-table-header">
-                            <tr>
+                <!-- Table Section -->
+                <div class="table-responsive rounded-3 border" style="max-height: 45vh; overflow-y: auto;">
+                    <table class="table table-hover text-center align-middle mb-0" id="report-table">
+                        <thead class="table-secondary" style="position: sticky; top: 0; z-index: 1;">
+                            <tr class="text-uppercase small fw-bold">
                                 <th>الرقم</th>
                                 <th>الاسم الكامل</th>
                                 <th>العداد السابق</th>
                                 <th>العداد الحالي</th>
-                                <th>الاستهلاك</th>
-                                <th>مبلغ هذا الشهر</th>
-                                <th>الصيانة</th>
-                                <th>الرصيد السابق</th>
-                                <th>الإجمالي المستحق</th>
+                                <th>الاستهلاك k.w</th>
+                                <th>مبلغ الشهر $</th>
+                                <th>الصيانة $</th>
+                                <th>الرصيد السابق $</th>
+                                <th>الإجمالي المستحق $</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -128,12 +160,12 @@
                                     <td>{{ $reading->client->full_name }}</td>
                                     <td>{{ $reading->previous_meter }}</td>
                                     <td>{{ $reading->current_meter }}</td>
-                                    <td>{{ $reading->consumption }} k.w</td>
-                                    <td>{{ !$isOffered ? number_format($reading->amount, 2).' $' : '-' }}</td>
-                                    <td>{{ !$isOffered ? number_format($reading->maintenance_cost, 2).' $' : '-' }}</td>
-                                    <td>{{ !$isOffered ? number_format($reading->previous_balance, 2).' $' : '-' }}</td>
+                                    <td>{{ $reading->consumption }}</td>
+                                    <td>{{ !$isOffered ? number_format($reading->amount, 2) : '-' }}</td>
+                                    <td>{{ !$isOffered ? number_format($reading->maintenance_cost, 2): '-' }}</td>
+                                    <td>{{ !$isOffered ? number_format($reading->previous_balance, 2) : '-' }}</td>
                                     <td class="fw-bold {{ !$isOffered && $reading->total_due > 0 ? 'text-danger' : 'text-success' }}">
-                                        {{ !$isOffered ? number_format($reading->total_due, 2).' $' : '-' }}
+                                        {{ !$isOffered ? number_format($reading->total_due, 2) : '-' }}
                                     </td>
                                 </tr>
                             @endforeach
@@ -156,10 +188,10 @@
                     </table>
                 </div>
             @else
-                <div class="text-center py-5">
-                    <i class="bi bi-file-earmark-text display-4 text-success mb-3"></i>
+                <div class="alert alert-light border text-center shadow-sm rounded-3 py-5">
+                    <i class="bi bi-file-earmark-text display-4 mb-3 text-success"></i>
                     <h5 class="text-muted">لا توجد قراءات</h5>
-                    <p class="text-muted">لا توجد قراءات مسجلة للشهر المحدد</p>
+                    <p class="text-muted mb-0">لم يتم العثور على أي قراءات مسجلة لهذا الشهر.</p>
                 </div>
             @endif
         </div>
@@ -205,7 +237,7 @@
                 border: 1px solid #000 !important;
                 border-collapse: collapse !important;
                 width: 100%;
-                font-size: 12px !important;
+                font-size: 14px !important;
                 color: #000 !important;
             }
 

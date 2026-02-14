@@ -45,13 +45,16 @@ class ExchangeRateModal extends Component
             
             if ($userExchangeRate) {
                 $this->authorize('view', $userExchangeRate);
+                $this->exchangeRate = $userExchangeRate->exchange_rate;
             } else {
                 // If no record exists, user can still view (they'll be creating one)
                 $this->authorize('create', ExchangeRate::class);
+                $this->exchangeRate = 89500;
             }
             
             $this->showModal = true;
             $this->clearAlert();
+            $this->resetValidation();
         } catch (AuthorizationException $e) {
             $this->dispatch('showAlert', 
                 message: 'ليس لديك صلاحية لعرض سعر الصرف', 
