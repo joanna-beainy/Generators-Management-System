@@ -18,6 +18,7 @@ class ShowClients extends Component
     public $selectedClientId = null;
     public $clients = [];
     public $displayClients = [];
+    public $showSearchResults = false;
 
     public $alertMessage = null;
     public $alertType = null;
@@ -112,15 +113,41 @@ class ShowClients extends Component
         $this->loadClients();
         $this->alertMessage = null;
         $this->alertType = null;
+        $this->showSearchResults = filled(trim($this->search));
 
         // Auto-select if only one result
         if ($this->clients->count() === 1) {
             $this->selectedClientId = $this->clients->first()->id;
+            $this->showSearchResults = false;
             $this->updateDisplayClients();
         } else {
             $this->selectedClientId = null;
             $this->updateDisplayClients();
         }
+    }
+
+    public function updatedSearch()
+    {
+        $this->loadClients();
+        $this->selectedClientId = null;
+        $this->alertMessage = null;
+        $this->alertType = null;
+        $this->showSearchResults = filled(trim($this->search));
+        $this->updateDisplayClients();
+    }
+
+    public function selectClient($clientId)
+    {
+        $client = $this->clients->firstWhere('id', (int) $clientId);
+        if (!$client) {
+            return;
+        }
+
+        $this->selectedClientId = $client->id;
+        $this->showSearchResults = false;
+        $this->alertMessage = null;
+        $this->alertType = null;
+        $this->updateDisplayClients();
     }
 
     public function updateDisplayClients()
@@ -135,6 +162,7 @@ class ShowClients extends Component
     public function updatedSelectedClientId($value)
     {
         if ($value) {
+            $this->showSearchResults = false;
             $this->resetValidation();
             $this->alertMessage = null;
             $this->alertType = null;
@@ -148,6 +176,7 @@ class ShowClients extends Component
     {
         $this->search = '';
         $this->selectedClientId = null;
+        $this->showSearchResults = false;
         $this->loadClients();
     }
 

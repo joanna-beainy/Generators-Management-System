@@ -12,64 +12,72 @@
                 </div>
 
                 <div class="modal-body p-4">
-                    {{-- Auto-Disappearing Alert --}}
                     @if ($alertMessage)
-                        <div 
-                            x-data="{ show: true }" 
-                            x-show="show" 
-                            x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
+                        <div
+                            x-data="{ show: true }"
+                            x-show="show"
+                            x-init="setTimeout(() => { show = false, $wire.set('alertMessage', null) }, 5000)"
                             x-transition:leave="transition ease-in duration-300"
                             x-transition:leave-start="opacity-100"
-                            x-transition:leave-end="opacity-0"
-                            class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4">
-                            <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
-                            {{ $alertMessage }}
-                            <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
+                            x-transition:leave-end="opacity-0">
+                            <div class="alert alert-{{ $alertType }} border-0 text-center rounded-3 shadow-sm mb-4 position-relative">
+                                <button type="button" class="btn-close position-absolute top-50 translate-middle-y" style="right: 1rem;" wire:click="$set('alertMessage', null)"></button>
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-2"></i>
+                                    {{ $alertMessage }}
+                                </div>
+                            </div>
                         </div>
                     @endif
 
-                    <!-- Search Input -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold text-secondary small">
+                    <div class="mb-3" x-data x-on:focus-client-search.window="$nextTick(() => $refs.clientSearch && $refs.clientSearch.focus())">
+                        <label class="form-label fw-bold medium">
                             <i class="bi bi-person-badge me-1"></i> ابحث عن مشترك
                         </label>
                         <div class="input-group shadow-sm rounded-pill overflow-hidden border">
                             <span class="input-group-text bg-white border-0 ps-3 text-muted"><i class="bi bi-search"></i></span>
-                            <input type="text" 
-                                wire:model.live.debounce.500ms="search" 
-                                x-data 
-                                x-init="$nextTick(() => $el.focus())"
-                                class="form-control border-0 py-2" 
+                            <input type="text"
+                                x-ref="clientSearch"
+                                autofocus
+                                wire:model.live.debounce.300ms="search"
+                                class="form-control border-0 py-2"
                                 placeholder="اكتب اسم المشترك أو رقمه..."
                                 style="text-align: right; box-shadow: none;">
                         </div>
-                    </div>
 
-                    <!-- Client List -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-secondary small">
-                            <i class="bi bi-list-check me-1"></i> اختيار مشترك
-                        </label>
-                        <div class="shadow-sm rounded-pill overflow-hidden border bg-white">
-                            <select wire:model.live="selectedClientId" class="form-select border-0 py-2" style="text-align: right; box-shadow: none;">
-                                <option value="">-- اختر المشترك من القائمة --</option>
-                                @foreach($clients as $client)
-                                    <option value="{{ $client->id }}">
-                                        {{ $client->id }} - {{ $client->full_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        @if(empty($clients) && strlen($search) > 0)
-                            <div class="text-center mt-2 text-muted small">
-                                لا توجد نتائج مطابقة
+                        @if($showSearchResults && $search)
+                            <div class="list-group w-100 shadow-sm border rounded-3 mt-1 overflow-auto bg-white" style="max-height: 260px;">
+                                @forelse($clients as $client)
+                                    <button type="button"
+                                            class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                            wire:click="selectClient({{ $client->id }})">
+                                        <span>{{ $client->id }} - {{ $client->full_name }}</span>
+                                        <i class="bi bi-person text-muted"></i>
+                                    </button>
+                                @empty
+                                    <div class="list-group-item text-muted small">
+                                        لا توجد نتائج مطابقة
+                                    </div>
+                                @endforelse
                             </div>
                         @endif
                     </div>
+
+                    @if(!$showSearchResults && $selectedClientId)
+                        @php
+                            $selectedClient = $clients->firstWhere('id', (int) $selectedClientId);
+                        @endphp
+                        @if($selectedClient)
+                            <div class="alert alert-light border rounded-3 py-2 px-3 mb-0">
+                                <i class="bi bi-person-check me-1 text-success"></i>
+                                {{ $selectedClient->id }} - {{ $selectedClient->full_name }}
+                            </div>
+                        @endif
+                    @endif
                 </div>
 
                 <div class="modal-footer border-0 p-4 bg-light bg-opacity-50 justify-content-between">
-                    <button class="btn btn-outline-secondary rounded-pill px-4" wire:click="closeModal">
+                    <button class="btn btn-outline-danger rounded-pill px-4" wire:click="closeModal">
                         <i class="bi bi-x me-1"></i> إغلاق
                     </button>
                     <button class="btn btn-success rounded-pill px-5 shadow-sm" wire:click="handleSelection">

@@ -24,13 +24,15 @@
 
                             <!-- Search and Client Selection -->
                             <div class="card border-0 shadow-sm rounded-4 mb-4 bg-light">
-                                <div class="card-body p-3">
+                                <div class="card-body p-3" x-data x-on:focus-receipt-search.window="$nextTick(() => $refs.receiptSearch && $refs.receiptSearch.focus())">
                                     <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold text-secondary small"><i class="bi bi-search me-1"></i>ابحث عن المشترك</label>
+                                        <div class="col-md-8">
+                                            <label class="form-label fw-bold medium"><i class="bi bi-search me-1"></i>ابحث عن المشترك</label>
                                             <div class="input-group shadow-sm rounded-pill overflow-hidden">
                                                 <input type="text" 
-                                                    wire:model="search" 
+                                                    x-ref="receiptSearch"
+                                                    autofocus
+                                                    wire:model.live.debounce.300ms="search" 
                                                     wire:keydown.enter="handleSearch"
                                                     class="form-control border-0" 
                                                     placeholder="اكتب اسم المشترك أو رقمه..."
@@ -40,37 +42,36 @@
                                                     <i class="bi bi-search text-secondary"></i>
                                                 </button>
                                             </div>
-                                            <div wire:loading wire:target="handleSearch" class="small text-muted mt-2">
+                                            @if($showSearchResults && $search)
+                                                <div class="list-group w-100 shadow-sm border rounded-3 mt-1 overflow-auto bg-white" style="max-height: 260px;">
+                                                    @forelse($unpaidClients as $client)
+                                                        <button type="button"
+                                                                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                                                wire:click="selectClient({{ $client->id }})">
+                                                            <span>{{ $client->id }} - {{ $client->full_name }}</span>
+                                                            <i class="bi bi-person text-muted"></i>
+                                                        </button>
+                                                    @empty
+                                                        <div class="list-group-item text-muted small">
+                                                            لا توجد نتائج
+                                                        </div>
+                                                    @endforelse
+                                                </div>
+                                            @endif
+                                            <div wire:loading wire:target="handleSearch,search" class="small text-muted mt-2">
                                                 <i class="bi bi-arrow-repeat spinner me-1"></i> جاري البحث...
                                             </div>
-                                        </div>  
-                                        
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold text-secondary small"><i class="bi bi-person-check me-1"></i>اختيار المشترك</label>
-                                            <div class="shadow-sm rounded-pill overflow-hidden border bg-white">
-                                                <select wire:model.live="selectedClientId" class="form-select border-0" style="text-align: right; box-shadow: none;">
-                                                    <option value="">-- اختر المشترك --</option>
-                                                    @foreach($unpaidClients as $client)
-                                                        <option value="{{ $client->id }}" wire:key="client-{{ $client->id }}">
-                                                            {{ $client->id }} - {{ $client->full_name }} 
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
                                         </div>
+                                        @if($search || $selectedClientId)
+                                            <div class="col-md-4 d-flex align-items-end">
+                                                <button wire:click="resetFilters" class="btn btn-outline-success btn-sm rounded-pill w-100">
+                                                    <i class="bi bi-arrow-clockwise me-1"></i> عرض جميع الإيصالات
+                                                </button>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
-
-                            @if($search || $selectedClientId)
-                                <div class="row mb-3">
-                                    <div class="col-12">
-                                        <button wire:click="resetFilters" class="btn btn-outline-primary btn-sm rounded-pill">
-                                            <i class="bi bi-arrow-clockwise me-1"></i> عرض جميع الإيصالات
-                                        </button>
-                                    </div>
-                                </div>
-                            @endif
 
                             {{-- Receipts display --}}
                             @if (empty($receiptsData) || count($receiptsData) === 0)
@@ -120,7 +121,7 @@
                     </div>
 
                     <div class="modal-footer border-0 p-3 bg-light bg-opacity-50 justify-content-between">
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" wire:click="closeModal">
+                        <button type="button" class="btn btn-outline-danger rounded-pill px-4" wire:click="closeModal">
                             <i class="bi bi-x me-1"></i> إغلاق
                         </button>
 
@@ -167,7 +168,7 @@
                             margin: 0 !important; 
                             padding: 0 !important; 
                             width: 100% !important; 
-                            height: 100% !important; 
+                            height: auto !important; 
                             background: white !important; 
                         }
                         .page-break { 

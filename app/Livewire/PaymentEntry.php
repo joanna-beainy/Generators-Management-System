@@ -23,6 +23,7 @@ class PaymentEntry extends Component
     public $clients;
     public $showConfirmationModal = false;
     public $pendingPaymentData = null;
+    public $showSearchResults = false;
 
     protected $rules = [
         'selectedClientId' => 'required|exists:clients,id',
@@ -96,11 +97,36 @@ class PaymentEntry extends Component
         $this->selectedClientId = null;
         $this->loadClients();
         $this->clearAlert();
+        $this->showSearchResults = filled(trim($this->search));
         
         // Auto-select if only one result
         if ($this->clients->count() === 1) {
             $this->selectedClientId = $this->clients->first()->id;
+            $this->showSearchResults = false;
         }
+    }
+
+    public function updatedSearch()
+    {
+        $this->selectedClientId = null;
+        $this->loadClients();
+        $this->clearAlert();
+        $this->showSearchResults = filled(trim($this->search));
+    }
+
+    public function selectClient($clientId)
+    {
+        $client = $this->clients->firstWhere('id', (int) $clientId);
+        if (!$client) {
+            return;
+        }
+
+        $this->selectedClientId = $client->id;
+        $this->showSearchResults = false;
+        $this->resetValidation();
+        $this->amount = '';
+        $this->discount = '';
+        $this->clearAlert();
     }
 
     public function loadClients()
@@ -122,6 +148,7 @@ class PaymentEntry extends Component
     public function updatedSelectedClientId($value)
     {
         if ($value) {
+            $this->showSearchResults = false;
             $this->resetValidation();
             $this->amount = '';
             $this->discount = '';
@@ -218,6 +245,7 @@ class PaymentEntry extends Component
     public function resetFilters()
     {
         $this->reset(['search', 'selectedClientId', 'amount', 'discount']);
+        $this->showSearchResults = false;
         $this->clearAlert();
         $this->loadClients();
     }
@@ -243,6 +271,7 @@ class PaymentEntry extends Component
             $payment->applyToReading();
             
             $this->reset(['search', 'selectedClientId', 'amount', 'discount']);
+            $this->showSearchResults = false;
             $this->loadClients();
             
             // Emit event to show receipt modal
@@ -278,3 +307,4 @@ class PaymentEntry extends Component
         ]);
     }
 }
+

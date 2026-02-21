@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <title>@yield('title')</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @vite(['resources/css/app.scss', 'resources/js/app.js'])
     @livewireStyles
     <style>
         html, body {
-            height: 100%;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
         }
 
         body {
@@ -49,15 +49,34 @@
 
         main {
             flex: 1; /* pushes footer to bottom */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Crucial for internal scrolling */
         }
 
         footer {
+            flex-shrink: 0;
             font-size: 12px;
             color: #777;
             text-align: center;
-            padding: 10px 0;
+            /* padding: 10px 0; */
         }
         [x-cloak] { display: none !important; }
+
+        @media print {
+            html, body {
+                height: auto !important;
+                overflow: visible !important;
+            }
+            body {
+                padding-top: 0 !important;
+            }
+            main {
+                overflow: visible !important;
+                height: auto !important;
+                flex: none !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-light">

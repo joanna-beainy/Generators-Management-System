@@ -22,6 +22,7 @@ class ReceiptModal extends Component
     public $search = ''; 
     public $unpaidClients = [];
     public $selectedClientId = null; 
+    public $showSearchResults = false;
     public $alertMessage = null;
     public $alertType = null;
 
@@ -92,10 +93,12 @@ class ReceiptModal extends Component
             $this->authorize('viewAny', Client::class);
 
             $this->reset(['search', 'selectedClientId']);
+            $this->showSearchResults = false;
             $this->mode = 'bulk';
             $this->loadUnpaidClients();
             $this->loadBulkReceipts();
             $this->show = true;
+            $this->dispatch('focus-receipt-search');
 
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض الإيصالات', 'danger');
@@ -109,14 +112,17 @@ class ReceiptModal extends Component
         try {
             $this->loadUnpaidClients();
             $this->loadBulkReceipts();
+            $this->showSearchResults = filled(trim($this->search));
 
             // Auto-select if only one result
             if ($this->unpaidClients->count() === 1) {
                 $this->selectedClientId = $this->unpaidClients->first()->id;
+                $this->showSearchResults = false;
                 $this->loadBulkReceipts(); 
             } else {
                 $this->selectedClientId = null;
             }
+            $this->dispatch('focus-receipt-search');
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء البحث', 'danger');
         }
@@ -125,18 +131,49 @@ class ReceiptModal extends Component
     public function updatedSelectedClientId()
     {
         try {
+            if ($this->selectedClientId) {
+                $this->showSearchResults = false;
+            }
             $this->loadBulkReceipts();
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تحميل بيانات الإيصالات', 'danger');
         }
     }
 
+    public function updatedSearch()
+    {
+        try {
+            $this->selectedClientId = null;
+            $this->showSearchResults = filled(trim($this->search));
+            $this->loadUnpaidClients();
+            $this->loadBulkReceipts();
+            $this->dispatch('focus-receipt-search');
+        } catch (Exception $e) {
+            $this->setAlert('حدث خطأ أثناء البحث', 'danger');
+        }
+    }
+
+    public function selectClient($clientId)
+    {
+        $client = collect($this->unpaidClients)->firstWhere('id', (int) $clientId);
+        if (!$client) {
+            return;
+        }
+
+        $this->selectedClientId = $client->id;
+        $this->showSearchResults = false;
+        $this->loadBulkReceipts();
+        $this->dispatch('focus-receipt-search');
+    }
+
     public function resetFilters()
     {
         $this->search = '';
         $this->selectedClientId = null;
+        $this->showSearchResults = false;
         $this->loadUnpaidClients();
         $this->loadBulkReceipts();
+        $this->dispatch('focus-receipt-search');
     }
 
     // Load unpaid clients - Ensuring we get latest COMPLETED reading 
@@ -314,7 +351,9 @@ class ReceiptModal extends Component
         $this->receiptsData = [];
         $this->clearAlert();
         $this->reset(['search', 'selectedClientId']);
-        $this->dispatch('resetPaymentEntryFilters');
+        $this->showSearchResults = false;
+        $this->dispatch('resetPaymentEntryFilters')->to(PaymentEntry::class);
+        $this->dispatch('clear-payment-entry-search');
     }
 
     public function render()

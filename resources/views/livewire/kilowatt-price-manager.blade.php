@@ -1,4 +1,5 @@
 <div class="d-flex justify-content-center">
+
     <div class="card shadow-sm border-0 rounded-4 w-100 overflow-hidden" style="max-width: 950px;" dir="rtl">
         <div class="card-header bg-success bg-opacity-10 text-center py-2 border-0">
             <h5 class="mb-0 fw-bold text-success">
@@ -6,7 +7,6 @@
             </h5>
         </div>
         <div class="card-body p-4 bg-white">
-            <!-- Alpine.js Auto-Disappearing Alert -->
             @if ($alertMessage)
                 <div 
                     x-data="{ show: true }" 
@@ -14,11 +14,14 @@
                     x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
                     x-transition:leave="transition ease-in duration-300"
                     x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
-                    class="alert alert-{{ $alertType }} border-0 text-center rounded-3 shadow-sm mb-4">
-                    <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
-                    {{ $alertMessage }}
-                    <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
+                    x-transition:leave-end="opacity-0">
+                    <div class="alert alert-{{ $alertType }} border-0 text-center rounded-3 shadow-sm mb-4 position-relative">
+                        <button type="button" class="btn-close position-absolute top-50 translate-middle-y" style="right: 1rem;" wire:click="$set('alertMessage', null)"></button>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-2"></i>
+                            {{ $alertMessage }}
+                        </div>
+                    </div>
                 </div>
             @endif
 

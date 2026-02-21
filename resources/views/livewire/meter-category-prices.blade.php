@@ -1,4 +1,5 @@
 <div class="d-flex justify-content-center">
+
     <div class="card shadow-sm border-0 rounded-4 w-100 overflow-hidden" style="max-width: 950px;" dir="rtl">
         <div class="card-header bg-success bg-opacity-10 text-center py-2 border-0">
             <h5 class="mb-0 fw-bold text-success">
@@ -6,7 +7,6 @@
             </h5>
         </div>
         <div class="card-body p-4 bg-white">
-            <!-- Alpine.js Auto-Disappearing Alert -->
             @if ($alertMessage)
                 <div 
                     x-data="{ show: true }" 
@@ -14,11 +14,14 @@
                     x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
                     x-transition:leave="transition ease-in duration-300"
                     x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
-                    class="alert alert-{{ $alertType }} border-0 text-center rounded-3 shadow-sm mb-4">
-                    <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
-                    {{ $alertMessage }}
-                    <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
+                    x-transition:leave-end="opacity-0">
+                    <div class="alert alert-{{ $alertType }} border-0 text-center rounded-3 shadow-sm mb-4 position-relative">
+                        <button type="button" class="btn-close position-absolute top-50 translate-middle-y" style="right: 1rem;" wire:click="$set('alertMessage', null)"></button>
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-2"></i>
+                            {{ $alertMessage }}
+                        </div>
+                    </div>
                 </div>
             @endif
 
@@ -35,17 +38,17 @@
             <!-- Add Category Form -->
             @if ($showAddForm)
                 <div class="bg-light p-4 rounded-4 mb-4 border-0 shadow-sm" x-transition>
-                    <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-plus-circle me-1 text-success"></i> تفاصيل الفئة الجديدة</h6>
+                    <h6 class="fw-bold mb-3 text-dark medium"><i class="bi bi-plus-circle me-1 text-success"></i> تفاصيل الفئة الجديدة</h6>
                     <form wire:submit.prevent="addCategory">
                         <div class="row g-3 align-items-end">
                             <div class="col-md-5">
-                                <label class="form-label small fw-bold text-secondary">اسم الفئة</label>
+                                <label class="form-label medium fw-bold">اسم الفئة</label>
                                 <input type="text" class="form-control rounded-pill border shadow-sm px-3 @error('newCategoryName') is-invalid @enderror"
                                        placeholder="اسم الفئة" wire:model.defer="newCategoryName" style="box-shadow: none;">
                                 @error('newCategoryName') <div class="invalid-feedback ps-2">{{ $message }}</div> @enderror
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold text-secondary">السعر ($)</label>
+                                <label class="form-label medium fw-bold">السعر ($)</label>
                                 <input type="number" step="0.01"
                                        class="form-control rounded-pill border shadow-sm px-3 @error('newCategoryPrice') is-invalid @enderror"
                                        placeholder="0.00" wire:model.defer="newCategoryPrice" style="direction: rtl; box-shadow: none;">
@@ -63,10 +66,10 @@
 
             <!-- Update Existing Categories -->
             <form wire:submit.prevent="updatePrices">
-                <div class="table-responsive rounded-3 border" style="max-height: 31vh; overflow-y: auto;">
+                <div class="table-responsive rounded-3 border">
                     <table class="table table-hover text-center align-middle mb-0">
                         <thead class="table-secondary" style="position: sticky; top: 0; z-index: 1;">
-                            <tr class="small fw-bold text-uppercase">
+                            <tr class="fw-bold text-uppercase">
                                 <th>الفئة</th>
                                 <th style="width: 220px;">السعر الحالي ($)</th>
                                 <th>إجراء</th>

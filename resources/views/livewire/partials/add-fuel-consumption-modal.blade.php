@@ -16,15 +16,14 @@
                         <div class="d-flex align-items-center text-success">
                             <i class="bi bi-info-circle-fill me-2 fs-5"></i>
                             <div>
-                                <small class="fw-bold">الوقود المتاح حالياً:</small>
-                                <span class="fw-bold font-monospace mx-1">{{ number_format(\App\Models\FuelPurchase::where('user_id', auth()->id())->sum('remaining_liters')) }}</span>
-                                <small>لتر</small>
+                                <span class="fw-bold">الوقود المتاح حالياً:</span>
+                                <span class="fw-bold font-monospace mx-1">{{ number_format(\App\Models\FuelPurchase::where('user_id', auth()->id())->sum('remaining_liters')) }} لتر</span>
                             </div>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-secondary">المولد <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold">المولد <span class="text-danger">*</span></label>
                         <div class="shadow-sm rounded-pill overflow-hidden border">
                             <select class="form-select border-0" wire:model="generator_id" style="box-shadow: none;">
                                 <option value="">اختر المولد</option>
@@ -37,7 +36,7 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-secondary">اللترات المستهلكة <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold">اللترات المستهلكة <span class="text-danger">*</span></label>
                         <div class="shadow-sm rounded-pill overflow-hidden border">
                             <input type="number" class="form-control border-0" style="text-align: right; box-shadow: none;" wire:model="liters_consumed" placeholder="0" min="1">
                         </div>
@@ -45,7 +44,7 @@
                     </div>
                     
                     <div class="mb-4">
-                        <label class="form-label fw-bold text-secondary">ملاحظات (اختياري)</label>
+                        <label class="form-label fw-bold">ملاحظات (اختياري)</label>
                         <textarea class="form-control shadow-sm rounded-4 border" rows="3" wire:model="notes" placeholder="أدخل ملاحظات إضافية..."></textarea>
                         @error('notes') <span class="text-danger small ms-2">{{ $message }}</span> @enderror
                     </div>
@@ -54,7 +53,7 @@
                         <button type="submit" class="btn btn-success rounded-pill px-5 shadow-sm">
                             <i class="bi bi-check-circle me-1"></i> حفظ
                         </button>
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" wire:click="closeConsumptionModal">
+                        <button type="button" class="btn btn-outline-danger rounded-pill px-4" wire:click="closeConsumptionModal">
                             <i class="bi bi-x-circle me-1"></i> إلغاء
                         </button>
                         

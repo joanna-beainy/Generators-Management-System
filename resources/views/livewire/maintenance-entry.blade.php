@@ -1,17 +1,24 @@
-<div class="container mt-2" dir="rtl">
+<div class="container d-flex flex-column" style="height: calc(100vh - 126px); overflow-y: auto;" dir="rtl" x-data="{}">
+    <style>
+        :root {
+            --fluid-v-gap: clamp(0.5rem, 2vh, 1.5rem);
+            --fluid-v-padding: clamp(0.75rem, 3vh, 2rem);
+            --fluid-v-header-margin: clamp(0.5rem, 2vh, 1.5rem);
+        }
+    </style>
     
     <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="flex-shrink-0 d-flex justify-content-between align-items-center" style="margin-top: var(--fluid-v-header-margin); margin-bottom: var(--fluid-v-header-margin);">
         <div>
             <h3 class="fw-bold text-dark mb-0">
                 <i class="bi bi-tools text-success me-2"></i> إدخال مصاريف صيانة
             </h3>
-            <p class="text-secondary mb-0 mt-1">
+            <p class="text-secondary mb-0 mt-1 small">
                 <i class="bi bi-info-circle me-1"></i> تسجيل عملية صيانة جديدة لمشترك محدد
             </p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary rounded-pill shadow-sm px-4">
+            <a href="{{ route('users.dashboard') }}" class="btn btn-outline-danger fw-bold rounded-pill shadow-sm px-4">
                 <i class="bi bi-x-circle me-1"></i> إغلاق
             </a>
         </div>
@@ -19,7 +26,7 @@
 
     {{-- Alpine.js Auto-Disappearing Alert --}}
     @if ($alertMessage)
-        <div 
+        <div class="flex-shrink-0"
             x-data="{ show: true }" 
             x-show="show" 
             x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
@@ -33,16 +40,19 @@
         </div>
     @endif
 
+    <div class="flex-shrink-1 pb-5" style="min-height: 0;">
+        <div class="row justify-content-center mx-0">
+            <div class="col-lg-7 col-xl-6 px-0 px-md-3">
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-        <div class="card-body p-4">
+        <div class="card-body bg-white" style="padding-top: var(--fluid-v-padding); padding-bottom: var(--fluid-v-padding); padding-left: 1.5rem; padding-right: 1.5rem;">
             
             <!-- Search and Client Selection -->
             <div class="row g-3 mb-4">
-                <div class="col-md-6">
+                <div class="col-12">
                     <label class="form-label fw-bold text-secondary"><i class="bi bi-search me-1"></i> ابحث عن المشترك</label>
                     <div class="input-group overflow-hidden rounded-pill shadow-sm border">
                          <input type="text" 
-                               wire:model="search" 
+                               wire:model.live.debounce.300ms="search" 
                                x-ref="searchField"
                                wire:keydown.enter="handleSearch"
                                class="form-control border-0" 
@@ -53,27 +63,30 @@
                             <i class="bi bi-search text-secondary"></i>
                         </button>
                     </div>
-                    <div wire:loading wire:target="handleSearch" class="small text-success mt-2 ms-2">
+                    @if($showSearchResults && $search)
+                        <div class="list-group w-100 shadow-sm border rounded-3 mt-1 overflow-auto bg-white" style="max-height: 260px;">
+                            @forelse($clients as $client)
+                                <button type="button"
+                                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                        wire:click="selectClient({{ $client->id }})">
+                                    <span>{{ $client->id }} - {{ $client->full_name }}</span>
+                                    <i class="bi bi-person text-muted"></i>
+                                </button>
+                            @empty
+                                <div class="list-group-item text-muted small">
+                                    لا توجد نتائج
+                                </div>
+                            @endforelse
+                        </div>
+                    @endif
+                    <div wire:loading wire:target="handleSearch,search" class="small text-success mt-2 ms-2">
                         <i class="bi bi-arrow-repeat spinner me-1"></i> جاري البحث...
                     </div>
+                @error('selectedClientId')
+                    <div class="text-danger small mt-1 ms-2">{{ $message }}</div>
+                @enderror
                 </div>
                 
-                <div class="col-md-6">
-                    <label class="form-label fw-bold text-secondary"><i class="bi bi-person-check me-1"></i> اختيار مشترك</label>
-                    <div class="shadow-sm rounded-pill overflow-hidden border">
-                        <select wire:model.live="selectedClientId" x-ref="clientDropdown" class="form-select border-0" style="text-align: right; box-shadow: none;">
-                            <option value="">-- اختر المشترك --</option>
-                            @foreach($clients as $client)
-                                <option value="{{ $client->id }}" wire:key="client-{{ $client->id }}">
-                                    {{ $client->id }} - {{ $client->full_name }} 
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    @error('selectedClientId')
-                        <div class="text-danger small mt-1 ms-2">{{ $message }}</div>
-                    @enderror
-                </div>
             </div>
 
             <!-- Maintenance Form -->
@@ -138,9 +151,9 @@
                                 </button>
                                 
                                 <button type="button" 
-                                        class="btn btn-outline-secondary rounded-pill px-4 ms-2"
-                                        wire:click="$set('selectedClientId', null)"
-                                        @click="$refs.searchField.value = ''; $refs.clientDropdown.value = ''; $refs.searchField.focus()"
+                                        class="btn btn-outline-danger rounded-pill px-4 ms-2"
+                                        wire:click="resetFilters"
+                                        @click="$refs.searchField.value = ''; $refs.searchField.focus()"
                                         wire:loading.attr="disabled">
                                     <i class="bi bi-x-circle me-1"></i> إلغاء
                                 </button>
@@ -170,6 +183,9 @@
                     @endif
                 </div>
             @endif
+        </div>
+    </div>
+            </div>
         </div>
     </div>
 </div>

@@ -1,4 +1,4 @@
-<div class="container mt-2" dir="rtl">
+<div class="container mt-2" dir="rtl" style="overflow: auto;">
     <!-- Header Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
@@ -10,13 +10,12 @@
             </p>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary rounded-pill shadow-sm px-4">
+            <a href="{{ route('users.dashboard') }}" class="btn btn-outline-danger fw-bold rounded-pill shadow-sm px-4">
                 <i class="bi bi-x-circle me-1"></i> إغلاق
             </a>
         </div>
     </div>
 
-    <!-- Alpine.js Auto-Disappearing Alert -->
     @if ($alertMessage)
         <div 
             x-data="{ show: true }" 
@@ -24,11 +23,14 @@
             x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
             x-transition:leave="transition ease-in duration-300"
             x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4">
-            <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
-            {{ $alertMessage }}
-            <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
+            x-transition:leave-end="opacity-0">
+            <div class="alert alert-{{ $alertType }} border-0 text-center rounded-3 shadow-sm mb-4 position-relative">
+                <button type="button" class="btn-close position-absolute top-50 translate-middle-y" style="right: 1rem;" wire:click="$set('alertMessage', null)"></button>
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-2"></i>
+                    {{ $alertMessage }}
+                </div>
+            </div>
         </div>
     @endif
 
@@ -39,7 +41,7 @@
                 <div class="row g-3 mb-4">
                     <!-- Name Field (Full Width) -->
                     <div class="col-12">
-                        <label class="form-label fw-bold text-secondary">
+                        <label class="form-label fw-bold">
                             <i class="bi bi-person me-1"></i> الاسم
                         </label>
                         <div class="shadow-sm rounded-pill overflow-hidden border">

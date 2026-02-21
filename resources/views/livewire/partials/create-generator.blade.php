@@ -11,7 +11,7 @@
             <div class="modal-body p-4 bg-white">
                 <form wire:submit.prevent="addGenerator">
                     <div class="mb-5">
-                        <label class="form-label small fw-bold text-secondary">اسم المولد</label>
+                        <label class="form-label medium fw-bold">اسم المولد</label>
                         <input type="text"
                                wire:model.defer="name"
                                class="form-control rounded-pill border shadow-sm px-3 @error('name') is-invalid @enderror"
@@ -26,7 +26,7 @@
                         <button type="submit" class="btn btn-success rounded-pill px-5 py-2 shadow-sm fw-bold">
                             <i class="bi bi-check-lg me-1"></i> إضافة المولد
                         </button>
-                        <button type="button" class="btn btn-outline-secondary rounded-pill px-4" wire:click="toggleAddForm">
+                        <button type="button" class="btn btn-outline-danger rounded-pill px-4" wire:click="toggleAddForm">
                             إلغاء
                         </button>
                     </div>

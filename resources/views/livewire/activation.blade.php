@@ -32,7 +32,7 @@
                 </div>
 
                 @if($error)
-                    <div class="alert alert-danger border-0 shadow-sm d-flex align-items-center" role="alert">
+                    <div class="alert alert-danger border-0 text-center rounded-3 shadow-sm d-flex align-items-center justify-content-center" role="alert">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
                         <div>{{ $error }}</div>
                     </div>

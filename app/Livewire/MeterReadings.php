@@ -13,6 +13,7 @@ class MeterReadings extends Component
 {
     public $search = '';
     public $selectedClientId = null;
+    public $showSearchResults = false;
     public $savedReadings = [];
     public $focusMeterId = null;
     
@@ -105,17 +106,47 @@ class MeterReadings extends Component
         $this->resetValidation();
         $this->clearAlert();
         $this->fieldErrors = [];
+        $this->showSearchResults = filled(trim($this->search));
         
         // Auto-select if only one result
         $clients = $this->loadClientsForSearch();
         $this->selectedClientId = $clients->count() === 1 ? $clients->first()->id : null;
+        if ($this->selectedClientId) {
+            $this->showSearchResults = false;
+        }
         
+        $this->loadAllReadings();
+    }
+
+    public function updatedSearch()
+    {
+        $this->selectedClientId = null;
+        $this->resetValidation();
+        $this->clearAlert();
+        $this->fieldErrors = [];
+        $this->showSearchResults = filled(trim($this->search));
+        $this->loadAllReadings();
+    }
+
+    public function selectClient($clientId)
+    {
+        $client = $this->loadClientsForSearch()->firstWhere('id', (int) $clientId);
+        if (!$client) {
+            return;
+        }
+
+        $this->selectedClientId = $client->id;
+        $this->showSearchResults = false;
+        $this->resetValidation();
+        $this->clearAlert();
+        $this->fieldErrors = [];
         $this->loadAllReadings();
     }
 
     public function updatedSelectedClientId($value)
     {
         if ($value) {
+            $this->showSearchResults = false;
             $this->resetValidation();
             $this->clearAlert();
             $this->fieldErrors = [];
@@ -134,6 +165,7 @@ class MeterReadings extends Component
     {
         $this->search = '';
         $this->selectedClientId = null;
+        $this->showSearchResults = false;
         $this->resetValidation();
         $this->clearAlert();
         $this->fieldErrors = [];

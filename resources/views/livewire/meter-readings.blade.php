@@ -1,4 +1,4 @@
-<div class="container mt-2" dir="rtl" 
+<div class="container d-flex flex-column" style="height: 100%; overflow: hidden;" dir="rtl" 
     x-data="{
         focusMeterId: @entangle('focusMeterId'),
         
@@ -20,7 +20,7 @@
     }">
     
     <!-- Header Section -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="flex-shrink-0 d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold text-dark mb-0">
                 <i class="bi bi-speedometer2 text-success me-2"></i> قراءات العدادات
@@ -30,35 +30,38 @@
             @endif
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('users.dashboard') }}" class="btn btn-outline-secondary rounded-pill shadow-sm px-4">
+            <a href="{{ route('users.dashboard') }}" class="btn btn-outline-danger fw-bold rounded-pill shadow-sm px-4">
                 <i class="bi bi-x-circle me-1"></i> إغلاق
             </a>
         </div>
     </div>
 
-    <!-- Alpine.js Auto-Disappearing Alert (Global) -->
+
     @if ($alertMessage)
-        <div 
+        <div class="flex-shrink-0"
             x-data="{ show: true }" 
             x-show="show" 
             x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
             x-transition:leave="transition ease-in duration-300"
             x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4">
-            <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
-            {{ $alertMessage }}
-            <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
+            x-transition:leave-end="opacity-0">
+            <div class="alert alert-{{ $alertType }} border-0 text-center rounded-3 shadow-sm mb-4 position-relative">
+                <button type="button" class="btn-close position-absolute top-50 translate-middle-y" style="right: 1rem;" wire:click="$set('alertMessage', null)"></button>
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-2"></i>
+                    {{ $alertMessage }}
+                </div>
+            </div>
         </div>
     @endif
 
     @if($displayReadings->count())
         <!-- Statistics Section -->
-        <div class="row g-3 mb-4 no-print">
+        <div class="flex-shrink-0 row g-3 mb-4 no-print">
             <div class="col-md">
                 <div class="card border-0 shadow-sm rounded-4 bg-white">
                     <div class="card-body p-3 text-center">
-                        <div class="text-muted small mb-1">إجمالي الاستهلاك</div>
+                        <div class="text-muted medium mb-1">إجمالي الاستهلاك</div>
                         <div class="h5 fw-bold mb-0 text-dark">
                             {{ $displayReadings->filter(fn($r) => !$r->client->is_offered)->sum('consumption') }} <span class="small font-monospace">k.w</span>
                         </div>
@@ -68,7 +71,7 @@
             <div class="col-md">
                 <div class="card border-0 shadow-sm rounded-4 bg-white">
                     <div class="card-body p-3 text-center">
-                        <div class="text-muted small mb-1">إجمالي التقدمة</div>
+                        <div class="text-muted medium mb-1">إجمالي التقدمة</div>
                         <div class="h5 fw-bold mb-0 text-info">
                             {{ $displayReadings->filter(fn($r) => $r->client->is_offered)->sum('consumption') }} <span class="small font-monospace">k.w</span>
                         </div>
@@ -78,7 +81,7 @@
             <div class="col-md">
                 <div class="card border-0 shadow-sm rounded-4 bg-white">
                     <div class="card-body p-3 text-center">
-                        <div class="text-muted small mb-1">إجمالي مبلغ الشهر</div>
+                        <div class="text-muted medium mb-1">إجمالي مبلغ الشهر</div>
                         <div class="h5 fw-bold mb-0 text-success">
                             {{ number_format($displayReadings->filter(fn($r) => !$r->client->is_offered)->sum('amount'), 2) }} $
                         </div>
@@ -88,7 +91,7 @@
             <div class="col-md">
                 <div class="card border-0 shadow-sm rounded-4 bg-white">
                     <div class="card-body p-3 text-center">
-                        <div class="text-muted small mb-1">إجمالي الصيانة</div>
+                        <div class="text-muted medium mb-1">إجمالي الصيانة</div>
                         <div class="h5 fw-bold mb-0 text-primary">
                             {{ number_format($displayReadings->filter(fn($r) => !$r->client->is_offered)->sum('maintenance_cost'), 2) }} $
                         </div>
@@ -98,7 +101,7 @@
             <div class="col-md">
                 <div class="card border-0 shadow-sm rounded-4 bg-white">
                     <div class="card-body p-3 text-center">
-                        <div class="text-muted small mb-1">إجمالي الرصيد السابق</div>
+                        <div class="text-muted medium mb-1">إجمالي الرصيد السابق</div>
                         <div class="h5 fw-bold mb-0 text-primary">
                             {{ number_format($displayReadings->filter(fn($r) => !$r->client->is_offered)->sum('previous_balance'), 2) }} $
                         </div>
@@ -108,7 +111,7 @@
             <div class="col-md">
                 <div class="card border-0 shadow-sm rounded-4 bg-white">
                     <div class="card-body p-3 text-center">
-                        <div class="text-muted small mb-1">إجمالي المبلغ المستحق</div>
+                        <div class="text-muted medium mb-1">إجمالي المبلغ المستحق</div>
                         <div class="h5 fw-bold mb-0 text-danger">
                             {{ number_format($displayReadings->filter(fn($r) => !$r->client->is_offered)->sum('total_due'), 2) }} $
                         </div>
@@ -118,57 +121,57 @@
         </div>
     @endif
 
-    <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
-        <div class="card-body p-4">
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden flex-grow-1 d-flex flex-column mb-3" style="min-height: 0;">
+        <div class="card-body p-4 d-flex flex-column" style="min-height: 0;">
             <!-- Search and Client Selection -->
-            <div class="row g-3 mb-4">
-                <div class="col-md-6">
-                    <label class="form-label fw-bold text-secondary"><i class="bi bi-search me-1"></i> ابحث عن المشترك</label>
+            <div class="flex-shrink-0 row g-3 mb-4 align-items-end">
+                <div class="col-md-10">
+                    <label class="form-label fw-bold"><i class="bi bi-search me-1"></i> ابحث عن المشترك</label>
                     <div class="input-group overflow-hidden rounded-pill shadow-sm border">
                         <input type="text" 
-                            wire:model="search" 
+                            wire:model.live.debounce.300ms="search" 
+                            x-ref="searchField"
                             wire:keydown.enter="handleSearch"
                             class="form-control border-0" 
                             placeholder="اكتب اسم المشترك أو رقمه..."
-                            wire:loading.attr="disabled"
                             style="text-align: right; box-shadow: none;">
                         <button class="btn btn-white border-0" type="button" wire:click="handleSearch">
                             <i class="bi bi-search text-secondary"></i>
                         </button>
                     </div>
-                    <div wire:loading wire:target="handleSearch" class="small text-muted mt-1 px-2">
+                    @if($showSearchResults && $search)
+                        <div class="list-group w-100 shadow-sm border rounded-3 mt-1 overflow-auto bg-white" style="max-height: 260px;">
+                            @forelse($clients as $client)
+                                <button type="button"
+                                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                        wire:click="selectClient({{ $client->id }})">
+                                    <span>{{ $client->id }} - {{ $client->full_name }}</span>
+                                    <i class="bi bi-person text-muted"></i>
+                                </button>
+                            @empty
+                                <div class="list-group-item text-muted small">
+                                    لا توجد نتائج
+                                </div>
+                            @endforelse
+                        </div>
+                    @endif
+                    <div wire:loading wire:target="handleSearch,search" class="small text-muted mt-1 px-2">
                         <i class="bi bi-arrow-repeat spinner me-1"></i> جاري البحث...
                     </div>
                 </div>
-                
-                <div class="col-md-6">
-                    <label class="form-label fw-bold text-secondary"><i class="bi bi-person-check me-1"></i>اختيار مشترك</label>
-                    <div class="shadow-sm rounded-pill overflow-hidden border">
-                        <select wire:model.live="selectedClientId" class="form-select border-0" style="text-align: right; box-shadow: none;">
-                            <option value="">-- اختر المشترك --</option>
-                            @foreach($clients as $client)
-                                <option value="{{ $client->id }}" wire:key="client-{{ $client->id }}">
-                                    {{ $client->id }} - {{ $client->full_name }} 
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            @if($search || $selectedClientId)
-                <div class="row mb-4">
-                    <div class="col-12 text-end">
+                @if($search || $selectedClientId)
+                    <div class="col-md-2 text-end">
                         <button wire:click="resetFilters" class="btn btn-outline-success rounded-pill btn-sm px-3">
                             <i class="bi bi-arrow-clockwise me-1"></i> عرض جميع القراءات
                         </button>
                     </div>
-                </div>
-            @endif
+                @endif
+            </div>
+
 
             @if($displayReadings->count())
-                <div class="table-responsive rounded-3 border" style="max-height: 43vh; overflow-y: auto;">
-                    <table class="table table-hover text-center align-middle mb-0;">
+                <div class="table-responsive flex-grow-1 rounded-3 border" style="overflow-y: auto;">
+                    <table class="table table-hover text-center align-middle mb-0">
                         <thead class="table-secondary" style="position: sticky; top: 0; z-index: 1;">
                             <tr class="text-uppercase small fw-bold">
                                 <th>✓</th>
@@ -346,12 +349,12 @@
                     </table>
                 </div>
             @else
-                <div class="alert alert-light border text-center shadow-sm rounded-3 py-5">
-                    <i class="bi bi-speedometer2 display-4 mb-3 text-success"></i>
-                    <h5 class="text-muted">لا يوجد قراءات</h5>
+                <div class="alert alert-light border text-center shadow-sm rounded-3 py-5 flex-grow-1 d-flex flex-column justify-content-center">
+                    <i class="bi bi-speedometer2 display-4 mb-3 text-success mx-auto"></i>
+                    <h5 class="text-muted fw-bold">لا يوجد قراءات</h5>
                     @if($search || $selectedClientId)
                         <p class="text-muted mb-3">لا توجد نتائج للبحث</p>
-                        <button wire:click="resetFilters" class="btn btn-outline-primary">
+                        <button wire:click="resetFilters" class="btn btn-outline-primary mx-auto">
                             <i class="bi bi-arrow-clockwise me-1"></i> عرض جميع القراءات
                         </button>
                     @else
@@ -360,10 +363,7 @@
                 </div>
             @endif
 
-
-                @include('livewire.partials.confirm-meter-update-modal')
-
+            @include('livewire.partials.confirm-meter-update-modal')
         </div>
     </div>
 </div>
-

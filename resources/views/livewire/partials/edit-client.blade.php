@@ -20,18 +20,29 @@
 
                     <!-- Form -->
                     <div x-show="!modalLoading" x-transition>
-                        @error('create')
-                            <div class="alert alert-danger border-0 text-center rounded-3 shadow-sm mb-4">
-                                <i class="bi bi-exclamation-triangle me-2"></i> {{ $message }}
-                                <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
+                        @if ($alertMessage)
+                            <div 
+                                x-data="{ show: true }" 
+                                x-show="show" 
+                                x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
+                                x-transition:leave="transition ease-in duration-300"
+                                x-transition:leave-start="opacity-100"
+                                x-transition:leave-end="opacity-0">
+                                <div class="alert alert-{{ $alertType }} border-0 text-center rounded-3 shadow-sm mb-4 position-relative">
+                                    <button type="button" class="btn-close position-absolute top-50 translate-middle-y" style="right: 1rem;" wire:click="$set('alertMessage', null)"></button>
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-2"></i>
+                                        {{ $alertMessage }}
+                                    </div>
+                                </div>
                             </div>
-                        @enderror
+                        @endif
 
                         <form wire:submit.prevent="updateClient">
                             {{-- Personal info --}}
                             <div class="row g-3 mb-4">
                                 <div class="col-md-4">
-                                    <label class="form-label small fw-bold text-secondary">الاسم الأول <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-bold">الاسم الأول <span class="text-danger">*</span></label>
                                     <input type="text" 
                                            wire:model="first_name" 
                                            class="form-control rounded-pill border shadow-sm px-3 @error('first_name') is-invalid @enderror"
@@ -42,7 +53,7 @@
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label class="form-label small fw-bold text-secondary">اسم الأب</label>
+                                    <label class="form-label fw-bold">اسم الأب</label>
                                     <input type="text" 
                                            wire:model="father_name" 
                                            class="form-control rounded-pill border shadow-sm px-3 @error('father_name') is-invalid @enderror"
@@ -53,11 +64,11 @@
                                 </div>
 
                                 <div class="col-md-4">
-                                    <label class="form-label small fw-bold text-secondary">الكنية</label>
+                                    <label class="form-label fw-bold">الشهرة</label>
                                     <input type="text" 
                                            wire:model="last_name" 
                                            class="form-control rounded-pill border shadow-sm px-3 @error('last_name') is-invalid @enderror"
-                                           placeholder="الكنية" style="box-shadow: none;">
+                                           placeholder="الشهرة" style="box-shadow: none;">
                                     @error('last_name') 
                                         <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div> 
                                     @enderror
@@ -67,7 +78,7 @@
                             <!-- Contact info -->
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-secondary">رقم الهاتف</label>
+                                    <label class="form-label fw-bold">رقم الهاتف</label>
                                     <input type="text" 
                                            wire:model="phone_number" 
                                            class="form-control rounded-pill border shadow-sm px-3 @error('phone_number') is-invalid @enderror"
@@ -78,7 +89,7 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-secondary">العنوان <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-bold">العنوان <span class="text-danger">*</span></label>
                                     <input type="text" 
                                            wire:model="address" 
                                            class="form-control rounded-pill border shadow-sm px-3 @error('address') is-invalid @enderror"
@@ -92,7 +103,7 @@
                             <!-- Generator & Category -->
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-secondary">المولد <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-bold">المولد <span class="text-danger">*</span></label>
                                     <select wire:model="generator_id" 
                                             class="form-select rounded-pill border shadow-sm px-3 @error('generator_id') is-invalid @enderror"
                                             style="box-shadow: none;">
@@ -107,7 +118,7 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-secondary">فئة العداد</label>
+                                    <label class="form-label fw-bold">فئة العداد</label>
                                     <select wire:model="meter_category_id" 
                                             class="form-select rounded-pill border shadow-sm px-3 @error('meter_category_id') is-invalid @enderror" 
                                             style="box-shadow: none;"
@@ -126,7 +137,7 @@
                             <!-- Meter and offered -->
                             <div class="row g-3 mb-5 align-items-center">
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-bold text-secondary">العداد الحالي <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-bold">العداد الحالي <span class="text-danger">*</span></label>
                                     <input type="number" 
                                            wire:model="current_meter" 
                                            min="0" 
@@ -165,7 +176,7 @@
                                 <button type="submit" class="btn btn-success rounded-pill px-5 py-2 shadow-sm fw-bold">
                                     <i class="bi bi-check-lg me-1"></i> تحديث البيانات
                                 </button>
-                                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" @click="editModalOpen = false">
+                                <button type="button" class="btn btn-outline-danger rounded-pill px-4" @click="editModalOpen = false">
                                     إلغاء
                                 </button>
                             </div>

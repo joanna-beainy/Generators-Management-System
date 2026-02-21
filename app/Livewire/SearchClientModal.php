@@ -12,6 +12,7 @@ class SearchClientModal extends Component
     public $search = '';
     public $clients;
     public $selectedClientId = null;
+    public $showSearchResults = false;
     public $alertMessage = null;
     public $alertType = null;
     public $actionType = null;
@@ -27,8 +28,10 @@ class SearchClientModal extends Component
     {
         $this->show = true;
         $this->reset(['search', 'selectedClientId', 'alertMessage', 'alertType']);
+        $this->showSearchResults = false;
         $this->actionType = $actionType;
         $this->loadClients();
+        $this->dispatch('focus-client-search');
     }
 
     public function loadClients()
@@ -51,20 +54,39 @@ class SearchClientModal extends Component
         $this->selectedClientId = null;
         $this->alertMessage = null;
         $this->alertType = null;
+        $this->showSearchResults = filled(trim($this->search));
         
         if ($this->clients->count() === 1) {
             $this->selectedClientId = $this->clients->first()->id;
+            $this->showSearchResults = false;
         }
+
+        $this->dispatch('focus-client-search');
     }
 
     public function updatedSelectedClientId()
     {
         if ($this->selectedClientId) {
+            $this->showSearchResults = false;
             $this->resetValidation();
             $this->alertMessage = null;
             $this->alertType = null;
             $this->loadClients();
         }
+    }
+
+    public function selectClient($clientId)
+    {
+        $client = $this->clients->firstWhere('id', (int) $clientId);
+        if (!$client) {
+            return;
+        }
+
+        $this->selectedClientId = $client->id;
+        $this->showSearchResults = false;
+        $this->alertMessage = null;
+        $this->alertType = null;
+        $this->dispatch('focus-client-search');
     }
 
     private function setAlert($message, $type = 'danger')
@@ -122,6 +144,7 @@ class SearchClientModal extends Component
     {
         $this->show = false;
         $this->reset(['search', 'selectedClientId', 'alertMessage', 'alertType', 'actionType']);
+        $this->showSearchResults = false;
     }
 
     public function render()
