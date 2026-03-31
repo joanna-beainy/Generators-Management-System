@@ -2,12 +2,13 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use App\Models\MeterReading;
 use App\Models\Client;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Auth\Access\AuthorizationException;
+use App\Models\MeterReading;
+use App\Support\ArabicMonth;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 
 class MeterReadings extends Component
 {
@@ -16,10 +17,10 @@ class MeterReadings extends Component
     public $showSearchResults = false;
     public $savedReadings = [];
     public $focusMeterId = null;
-    
+
     public $allReadings = [];
     public $displayReadings = [];
-    
+
     public $alertMessage = null;
     public $alertType = null;
     public $fieldErrors = [];
@@ -58,13 +59,11 @@ class MeterReadings extends Component
         $userId = Auth::id();
 
         try {
-            // Check if user can view meter readings
             $this->authorize('viewAny', MeterReading::class);
 
             $this->allReadings = MeterReading::latestMonthReadings($userId)
                 ->load(['client.meterCategory', 'client.user.kilowattPrice', 'payments']);
 
-            // Apply filters
             if ($this->selectedClientId) {
                 $this->allReadings = $this->allReadings
                     ->where('client_id', $this->selectedClientId);
@@ -75,7 +74,6 @@ class MeterReadings extends Component
             }
 
             $this->updateDisplayReadings();
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض قراءات العدادات', 'danger');
             $this->allReadings = collect();
@@ -90,42 +88,26 @@ class MeterReadings extends Component
     public function loadClientsForSearch()
     {
         try {
-            return Client::where('user_id', Auth::id())
+            return Client::forUser(Auth::id())
                 ->active()
                 ->search($this->search)
-                ->orderBy('id')
+                ->ordered()
                 ->get();
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تحميل بيانات المشتركين', 'danger');
+
             return collect();
         }
     }
 
     public function handleSearch()
     {
-        $this->resetValidation();
-        $this->clearAlert();
-        $this->fieldErrors = [];
-        $this->showSearchResults = filled(trim($this->search));
-        
-        // Auto-select if only one result
-        $clients = $this->loadClientsForSearch();
-        $this->selectedClientId = $clients->count() === 1 ? $clients->first()->id : null;
-        if ($this->selectedClientId) {
-            $this->showSearchResults = false;
-        }
-        
-        $this->loadAllReadings();
+        $this->refreshSearchState(true);
     }
 
     public function updatedSearch()
     {
-        $this->selectedClientId = null;
-        $this->resetValidation();
-        $this->clearAlert();
-        $this->fieldErrors = [];
-        $this->showSearchResults = filled(trim($this->search));
-        $this->loadAllReadings();
+        $this->refreshSearchState(false);
     }
 
     public function selectClient($clientId)
@@ -141,17 +123,6 @@ class MeterReadings extends Component
         $this->clearAlert();
         $this->fieldErrors = [];
         $this->loadAllReadings();
-    }
-
-    public function updatedSelectedClientId($value)
-    {
-        if ($value) {
-            $this->showSearchResults = false;
-            $this->resetValidation();
-            $this->clearAlert();
-            $this->fieldErrors = [];
-        }
-        $this->updateDisplayReadings();
     }
 
     public function updateDisplayReadings()
@@ -172,16 +143,32 @@ class MeterReadings extends Component
         $this->loadAllReadings();
     }
 
+    private function refreshSearchState(bool $allowAutoSelect): void
+    {
+        $this->selectedClientId = null;
+        $this->resetValidation();
+        $this->clearAlert();
+        $this->fieldErrors = [];
+        $this->showSearchResults = filled(trim($this->search));
+
+        $clients = $this->loadClientsForSearch();
+
+        if ($allowAutoSelect && $clients->count() === 1) {
+            $this->selectedClientId = $clients->first()->id;
+            $this->showSearchResults = false;
+        }
+
+        $this->loadAllReadings();
+    }
+
     public function updateCurrentMeter($readingId, $value, $moveFocus = null)
     {
         try {
             $reading = MeterReading::with(['client.meterCategory', 'client.user.kilowattPrice', 'payments'])->findOrFail($readingId);
 
             $value = (int) $value;
-            // Check authorization using Policy
             $this->authorize('update', $reading);
 
-            // Clear any previous field error for this reading
             $this->clearFieldError($readingId);
 
             if ($value < $reading->previous_meter) {
@@ -189,9 +176,6 @@ class MeterReadings extends Component
                 return;
             }
 
-             /**
-             * FIRST TIME ENTRY → update directly
-             */
             if (is_null($reading->reading_date)) {
                 $this->applyMeterUpdate($reading, $value);
 
@@ -200,28 +184,20 @@ class MeterReadings extends Component
                 } elseif ($moveFocus === 'prev') {
                     $this->focusMeterId = $this->getPrevMeterId($readingId);
                 }
-                
-                // Reload readings to reflect changes
+
                 $this->loadAllReadings();
                 return;
             }
-            
-            /**
-             * SECOND TIME → ask for confirmation
-             */
 
-            if ((int)$reading->current_meter === (int)$value) {
+            if ((int) $reading->current_meter === (int) $value) {
                 return;
             }
 
-            // Dispatch browser event to show confirmation modal
             $this->dispatchBrowserEvent('show-confirm-modal', [
                 'readingId' => $readingId,
-                'oldMeter'   => (int) $reading->current_meter,
-                'value'      => $value,
+                'oldMeter' => (int) $reading->current_meter,
+                'value' => $value,
             ]);
-            
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لتحديث قراءة العداد هذه', 'danger');
         } catch (Exception $e) {
@@ -229,27 +205,18 @@ class MeterReadings extends Component
         }
     }
 
-     /** =========================
-     *  Confirm modal actions
-     *  ========================= */
     public function confirmMeterUpdate($readingId, $newMeter)
     {
         $reading = MeterReading::findOrFail($readingId);
 
         $this->authorize('update', $reading);
 
-        $this->applyMeterUpdate($reading, (int)$newMeter);
-
-        // refresh minimal data; consider replacing loadAllReadings with a targeted update for speed
+        $this->applyMeterUpdate($reading, (int) $newMeter);
         $this->loadAllReadings();
 
         $this->setAlert('تم تحديث قراءة العداد بنجاح.', 'success');
     }
 
-
-     /** =========================
-     *  Actual save logic
-     *  ========================= */
     private function applyMeterUpdate(MeterReading $reading, int $value)
     {
         $client = $reading->client;
@@ -265,7 +232,7 @@ class MeterReadings extends Component
                 'reading_date' => now(),
             ]);
         } else {
-            $previousBalance = $this->calculateActualPreviousBalance(
+            $previousBalance = MeterReading::actualPreviousBalanceForClientBeforeMonth(
                 $client->id,
                 $reading->reading_for_month
             );
@@ -286,32 +253,19 @@ class MeterReadings extends Component
             ]);
         }
 
+        if ((int) $client->initial_meter !== $value) {
+            $client->update(['initial_meter' => $value]);
+        }
+
         $this->savedReadings[$reading->id] = true;
-
-        //clear any field error after successful save
         $this->clearFieldError($reading->id);
-        
     }
-
-
-    // Calculate the actual previous balance from the latest completed reading BEFORE the current month
-    private function calculateActualPreviousBalance($clientId, $currentMonth)
-    {
-        $previousReading = MeterReading::where('client_id', $clientId)
-            ->beforeMonth($currentMonth)
-            ->completed()
-            ->latest()
-            ->first();
-
-        // Return the remaining_amount from the previous completed reading (can be negative for credit)
-        return $previousReading?->remaining_amount ?? 0;
-    }
-
 
     public function getNextMeterId($currentId)
     {
         $ids = $this->displayReadings->pluck('id')->values();
         $index = $ids->search($currentId);
+
         return $ids[$index + 1] ?? null;
     }
 
@@ -319,29 +273,17 @@ class MeterReadings extends Component
     {
         $ids = $this->displayReadings->pluck('id')->values();
         $index = $ids->search($currentId);
-        return $ids[$index - 1] ?? null;
-    }
 
-    private function getArabicMonthName($date)
-    {
-        $months = [
-            1 => 'كانون الثاني', 2 => 'شباط', 3 => 'آذار', 4 => 'نيسان',
-            5 => 'أيار', 6 => 'حزيران', 7 => 'تموز', 8 => 'آب',
-            9 => 'أيلول', 10 => 'تشرين الأول', 11 => 'تشرين الثاني', 12 => 'كانون الأول',
-        ];
-        
-        return $months[$date->month] . ' ' . $date->year;
+        return $ids[$index - 1] ?? null;
     }
 
     public function render()
     {
-        $clients = $this->loadClientsForSearch();
-        $latestMonth = $this->allReadings->first()?->reading_for_month;
-        $arabicMonthName = $latestMonth ? $this->getArabicMonthName($latestMonth) : null;
-
         return view('livewire.meter-readings', [
-            'clients' => $clients,
-            'arabicMonthName' => $arabicMonthName,
+            'clients' => $this->loadClientsForSearch(),
+            'arabicMonthName' => $this->allReadings->first()?->reading_for_month
+                ? ArabicMonth::label($this->allReadings->first()->reading_for_month)
+                : null,
         ]);
     }
 }

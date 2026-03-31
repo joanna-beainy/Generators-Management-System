@@ -1,4 +1,4 @@
-<div class="container d-flex flex-column h-100" style="overflow-y: auto;" dir="rtl" x-data="{}" x-on:clear-payment-entry-search.window="$refs.searchField.value = ''; $refs.searchField.focus()">
+<div class="container d-flex flex-column h-100" style="overflow-y: auto;" dir="rtl" x-data="{}" x-on:clear-payment-entry-search.window="$refs.searchField.value = ''; $nextTick(() => $refs.searchField?.focus())">
     <style>
         :root {
             --fluid-v-gap: clamp(0.5rem, 2vh, 1.5rem);
@@ -7,7 +7,6 @@
         }
     </style>
 
-    <!-- Header Section -->
     <div class="flex-shrink-0 d-flex justify-content-between align-items-center" style="margin-top: var(--fluid-v-header-margin); margin-bottom: var(--fluid-v-header-margin);">
         <div>
             <h3 class="fw-bold text-dark mb-0">
@@ -45,27 +44,23 @@
     <div class="flex-shrink-1 pb-5" style="min-height: 0;">
         <div class="row justify-content-center mx-0">
             <div class="col-lg-7 col-xl-6 px-0 px-md-3">
-
                 <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
                     <div class="card-body bg-white" style="padding-top: var(--fluid-v-padding); padding-bottom: var(--fluid-v-padding); padding-left: 1.5rem; padding-right: 1.5rem;">
-                        <!-- Overpayment Confirmation Modal -->
                         @if($showConfirmationModal)
                             @include('livewire.partials.overpayment-confirmation-modal')
                         @endif
 
-                        <!-- Search and Client Selection -->
-                        <div class="row g-3" style="margin-bottom: var(--fluid-v-gap);">
-                            <div class="col-12">
-                                <label class="form-label fw-bold"><i class="bi bi-search me-1"></i> ابحث عن المشترك</label>
+                        <div class="row g-3 align-items-start" style="margin-bottom: var(--fluid-v-gap);">
+                            <div class="{{ $selectedClient ? 'col-lg-4' : 'col-12' }}">
                                 <div class="input-group overflow-hidden rounded-pill shadow-sm border">
                                     <input type="text"
-                                           wire:model.live.debounce.300ms="search"
-                                           x-ref="searchField"
-                                           wire:keydown.enter="handleSearch"
-                                           class="form-control border-0"
-                                           placeholder="اكتب اسم المشترك أو رقمه..."
-                                           autofocus
-                                           style="text-align: right; box-shadow: none;">
+                                        wire:model.live.debounce.300ms="search"
+                                        x-ref="searchField"
+                                        wire:keydown.enter="handleSearch"
+                                        class="form-control border-0"
+                                        placeholder="بحث"
+                                        autofocus
+                                        style="text-align: right; box-shadow: none;">
                                     <button class="btn btn-white border-0" type="button" wire:click="handleSearch">
                                         <i class="bi bi-search text-secondary"></i>
                                     </button>
@@ -75,8 +70,8 @@
                                     <div class="list-group w-100 shadow-sm border rounded-3 mt-1 overflow-auto bg-white" style="max-height: 260px;">
                                         @forelse($clients as $client)
                                             <button type="button"
-                                                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                                                    wire:click="selectClient({{ $client->id }})">
+                                                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                                wire:click="selectClient({{ $client->id }})">
                                                 <span>{{ $client->id }} - {{ $client->full_name }}</span>
                                                 <i class="bi bi-person text-muted"></i>
                                             </button>
@@ -96,16 +91,25 @@
                                     <div class="text-danger small mt-1 px-2">{{ $message }}</div>
                                 @enderror
                             </div>
+
+                            @if($selectedClient)
+                                <div class="col-lg-8 d-flex justify-content-lg-start justify-content-center align-items-end">
+                                    <div class="d-inline-flex align-items-center bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-4 py-2">
+                                        <i class="bi bi-person-badge fs-4 me-2"></i>
+                                        <span class="fw-bold fs-5">{{ $selectedClient->full_name }}</span>
+                                        <span class="mx-3 opacity-50">|</span>
+                                        <span class="fs-6 fw-bold">الرقم: {{ $selectedClient->id }}</span>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
 
-                        <!-- Payment Form -->
                         @if($selectedClient)
                             @php
                                 $selectedClientObj = $this->getSelectedClient();
                             @endphp
 
                             @if($selectedClientObj && $selectedClientObj->is_offered)
-                                <!-- Show message for offered clients -->
                                 <div class="border rounded bg-warning bg-opacity-10" style="padding-top: var(--fluid-v-padding); padding-bottom: var(--fluid-v-padding); padding-left: 1rem; padding-right: 1rem;">
                                     <div class="text-center py-2">
                                         <i class="bi bi-gift h1 text-warning mb-2"></i>
@@ -116,18 +120,7 @@
                                     </div>
                                 </div>
                             @else
-                                <!-- Show payment form for regular clients -->
                                 <div class="border-0 rounded-4 bg-light shadow-sm" style="padding-top: var(--fluid-v-padding); padding-bottom: 0.5rem; padding-left: 1rem; padding-right: 1rem;" wire:key="payment-form-{{ $selectedClient->id }}">
-                                    <div class="d-flex align-items-center" style="margin-bottom: var(--fluid-v-gap);">
-                                        <div class="bg-white p-2 p-md-3 rounded-circle shadow-sm me-3">
-                                            <i class="bi bi-person text-success h4 mb-0"></i>
-                                        </div>
-                                        <div>
-                                            <h5 class="fw-bold mb-0 text-dark">{{ $selectedClient->full_name }}</h5>
-                                        </div>
-                                    </div>
-
-                                    <!-- Current Balance -->
                                     <div class="row" style="margin-bottom: var(--fluid-v-gap);">
                                         <div class="col-12">
                                             <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
@@ -146,20 +139,19 @@
 
                                     <form wire:submit.prevent="save">
                                         <div class="row g-3">
-                                            <!-- Amount Paid -->
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold">المبلغ المدفوع ($) <span class="text-danger">*</span></label>
                                                 <div class="input-group">
                                                     <input type="number"
-                                                           wire:model.live="amount"
-                                                           x-init="$el.focus()"
-                                                           class="form-control @error('amount') is-invalid @enderror"
-                                                           step="0.50"
-                                                           min="0.50"
-                                                           placeholder="0.00"
-                                                           required
-                                                           style="text-align: left; box-shadow: shadow-sm;">
-                                                    <span class="input-group-text">$</span>
+                                                        wire:model.live="amount"
+                                                        x-ref="amountField"
+                                                        class="form-control @error('amount') is-invalid @enderror"
+                                                        step="0.50"
+                                                        min="0.50"
+                                                        placeholder="0.00"
+                                                        required
+                                                        style="text-align: left; box-shadow: shadow-sm;">
+                                                    <span class="input-group-text text-success fw-bold">$</span>
                                                 </div>
                                                 @error('amount')
                                                     <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -171,18 +163,17 @@
                                                 </div>
                                             </div>
 
-                                            <!-- Discount -->
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold">الخصم ($) (اختياري)</label>
                                                 <div class="input-group">
                                                     <input type="number"
-                                                           wire:model.live="discount"
-                                                           class="form-control @error('discount') is-invalid @enderror"
-                                                           step="0.50"
-                                                           min="0"
-                                                           placeholder="0.00"
-                                                           style="text-align: left; box-shadow: shadow-sm;">
-                                                    <span class="input-group-text">$</span>
+                                                        wire:model.live="discount"
+                                                        class="form-control @error('discount') is-invalid @enderror"
+                                                        step="0.50"
+                                                        min="0"
+                                                        placeholder="0.00"
+                                                        style="text-align: left; box-shadow: shadow-sm;">
+                                                    <span class="input-group-text text-success fw-bold">$</span>
                                                 </div>
                                                 @error('discount')
                                                     <div class="invalid-feedback d-block">{{ $message }}</div>
@@ -194,7 +185,6 @@
                                                 </div>
                                             </div>
 
-                                            <!-- Total Summary -->
                                             <div class="col-12" style="margin-top: var(--fluid-v-gap);">
                                                 <div class="card border-0 shadow-sm rounded-4 bg-success bg-opacity-10">
                                                     <div class="card-body p-2">
@@ -213,7 +203,6 @@
                                                 </div>
                                             </div>
 
-                                            <!-- Buttons -->
                                             <div class="col-12 text-center" style="margin-top: var(--fluid-v-gap); padding-bottom: 0.5rem;">
                                                 <button type="submit" class="btn btn-success rounded-pill px-5 shadow-sm py-2 fw-bold" wire:loading.attr="disabled">
                                                     <i class="bi bi-save me-2"></i>
@@ -224,10 +213,10 @@
                                                 </button>
 
                                                 <button type="button"
-                                                        class="btn btn-outline-danger rounded-pill px-4 ms-2 py-2 fw-bold"
-                                                        wire:click="resetFilters"
-                                                        @click="$refs.searchField.value = ''; $refs.searchField.focus()"
-                                                        wire:loading.attr="disabled">
+                                                    class="btn btn-outline-danger rounded-pill px-4 ms-2 py-2 fw-bold"
+                                                    wire:click="resetFilters"
+                                                    @click="$refs.searchField.value = ''; $refs.searchField.focus()"
+                                                    wire:loading.attr="disabled">
                                                     إلغاء
                                                 </button>
                                             </div>
@@ -236,7 +225,6 @@
                                 </div>
                             @endif
                         @else
-                            <!-- No Client Selected State -->
                             <div class="text-center py-4 py-md-5">
                                 @if($search && $clients->isEmpty())
                                     <div class="py-4 py-md-5">
@@ -260,7 +248,6 @@
                     </div>
                 </div>
 
-                <!-- Include Receipt Modal Component -->
                 @livewire('receipt-modal')
             </div>
         </div>

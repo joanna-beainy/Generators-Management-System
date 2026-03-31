@@ -7,7 +7,6 @@ use App\Models\Client;
 use App\Models\Payment;
 use Livewire\Component;
 use App\Models\ExchangeRate;
-use App\Models\MeterReading;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -80,12 +79,6 @@ class PaymentEntry extends Component
         return number_format($total, 0);
     }
 
-    // Get current user info
-    public function getUserProperty()
-    {
-        return Auth::user();
-    }
-
     public function mount()
     {
         $this->clients = collect();
@@ -94,24 +87,12 @@ class PaymentEntry extends Component
 
     public function handleSearch()
     {
-        $this->selectedClientId = null;
-        $this->loadClients();
-        $this->clearAlert();
-        $this->showSearchResults = filled(trim($this->search));
-        
-        // Auto-select if only one result
-        if ($this->clients->count() === 1) {
-            $this->selectedClientId = $this->clients->first()->id;
-            $this->showSearchResults = false;
-        }
+        $this->refreshSearchState(true);
     }
 
     public function updatedSearch()
     {
-        $this->selectedClientId = null;
-        $this->loadClients();
-        $this->clearAlert();
-        $this->showSearchResults = filled(trim($this->search));
+        $this->refreshSearchState(false);
     }
 
     public function selectClient($clientId)
@@ -121,40 +102,30 @@ class PaymentEntry extends Component
             return;
         }
 
+        $this->search = '';
         $this->selectedClientId = $client->id;
         $this->showSearchResults = false;
         $this->resetValidation();
         $this->amount = '';
         $this->discount = '';
         $this->clearAlert();
+        $this->dispatch('clear-payment-entry-search');
     }
 
     public function loadClients()
     {
-        $this->clients = Client::where('user_id', Auth::id())
-            ->where('is_offered', false)
+        $this->clients = Client::forUser(Auth::id())
+            ->notOffered()
             ->when($this->search, function ($query, $search) {
                 $query->search($search);
             })
-            ->orderBy('id')
+            ->ordered()
             ->get()
             ->map(function ($client) {
                 $client->current_remaining_usd = $client->total_remaining_amount;
                 $client->current_remaining_lbp = $client->total_remaining_amount * $this->exchangeRate;
                 return $client;
             });
-    }
-
-    public function updatedSelectedClientId($value)
-    {
-        if ($value) {
-            $this->showSearchResults = false;
-            $this->resetValidation();
-            $this->amount = '';
-            $this->discount = '';
-            $this->clearAlert();
-            $this->loadClients();
-        }
     }
 
     public function updatedAmount()
@@ -249,27 +220,32 @@ class PaymentEntry extends Component
         $this->clearAlert();
         $this->loadClients();
     }
+
+    private function refreshSearchState(bool $allowAutoSelect): void
+    {
+        $this->selectedClientId = null;
+        $this->loadClients();
+        $this->clearAlert();
+        $this->showSearchResults = filled(trim($this->search));
+
+        if ($allowAutoSelect && $this->clients->count() === 1) {
+            $this->search = '';
+            $this->selectedClientId = $this->clients->first()->id;
+            $this->showSearchResults = false;
+            $this->dispatch('clear-payment-entry-search');
+        }
+    }
     
     private function processPayment($clientId, $amount, $discount)
     {
         try {
-            $latestCompletedReading = MeterReading::latestCompletedForClient($clientId);
+            $payment = Payment::recordForLatestCompletedReading($clientId, $amount, $discount);
             
-            if (!$latestCompletedReading) {
+            if (!$payment) {
                 $this->setAlert('لا يوجد فاتورة سابقة للمشترك يمكن السداد لها', 'danger');
                 return;
             }
 
-            $payment = Payment::create([
-                'client_id' => $clientId,
-                'meter_reading_id' => $latestCompletedReading->id,
-                'amount' => $amount,
-                'discount' => $discount,
-                'paid_at' => now(),
-            ]);
-
-            $payment->applyToReading();
-            
             $this->reset(['search', 'selectedClientId', 'amount', 'discount']);
             $this->showSearchResults = false;
             $this->loadClients();
@@ -291,7 +267,7 @@ class PaymentEntry extends Component
             return null;
         }
         
-        $client = Client::find($this->selectedClientId);
+        $client = Client::forUser(Auth::id())->find($this->selectedClientId);
         if ($client) {
             $client->current_remaining_usd = $client->total_remaining_amount;
             $client->current_remaining_lbp = $client->total_remaining_amount * $this->exchangeRate;
@@ -307,4 +283,3 @@ class PaymentEntry extends Component
         ]);
     }
 }
-

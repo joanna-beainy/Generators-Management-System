@@ -36,13 +36,13 @@ class SearchClientModal extends Component
 
     public function loadClients()
     {
-        $query = Client::where('user_id', Auth::id())
+        $query = Client::forUser(Auth::id())
             ->search($this->search)
-            ->orderBy('id');
+            ->ordered();
 
         // Exclude offered clients for payment and maintenance actions
         if (in_array($this->actionType, ['print-receipt', 'view-maintenance', 'view-payments'])) {
-            $query->where('is_offered', false);
+            $query->notOffered();
         }
 
         $this->clients = $query->get();
@@ -50,29 +50,20 @@ class SearchClientModal extends Component
 
     public function updatedSearch()
     {
-        $this->loadClients();
-        $this->selectedClientId = null;
-        $this->alertMessage = null;
-        $this->alertType = null;
-        $this->showSearchResults = filled(trim($this->search));
-        
-        if ($this->clients->count() === 1) {
-            $this->selectedClientId = $this->clients->first()->id;
-            $this->showSearchResults = false;
-        }
-
+        $this->refreshSearchState();
         $this->dispatch('focus-client-search');
     }
 
-    public function updatedSelectedClientId()
+    public function confirmSearchSelection()
     {
+        $this->refreshSearchState();
+
         if ($this->selectedClientId) {
-            $this->showSearchResults = false;
-            $this->resetValidation();
-            $this->alertMessage = null;
-            $this->alertType = null;
-            $this->loadClients();
+            $this->handleSelection();
+            return;
         }
+
+        $this->dispatch('focus-client-search');
     }
 
     public function selectClient($clientId)
@@ -86,7 +77,21 @@ class SearchClientModal extends Component
         $this->showSearchResults = false;
         $this->alertMessage = null;
         $this->alertType = null;
-        $this->dispatch('focus-client-search');
+        $this->handleSelection();
+    }
+
+    private function refreshSearchState(): void
+    {
+        $this->loadClients();
+        $this->selectedClientId = null;
+        $this->alertMessage = null;
+        $this->alertType = null;
+        $this->showSearchResults = filled(trim($this->search));
+
+        if ($this->clients->count() === 1) {
+            $this->selectedClientId = $this->clients->first()->id;
+            $this->showSearchResults = false;
+        }
     }
 
     private function setAlert($message, $type = 'danger')
@@ -102,7 +107,7 @@ class SearchClientModal extends Component
             return;
         }
 
-        $client = Client::find($this->selectedClientId);
+        $client = Client::forUser(Auth::id())->find($this->selectedClientId);
         
         if (!$client) {
             $this->setAlert('المشترك غير موجود.');

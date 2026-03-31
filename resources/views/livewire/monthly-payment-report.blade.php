@@ -99,7 +99,7 @@
                         <tbody class="bg-white">
                             @foreach($payments as $payment)
                                 <tr>
-                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ $payment->client->id }}</td>
                                     <td>{{ $payment->client->full_name }}</td>
                                     <td>{{ $payment->paid_at->format('d-m-Y') }}</td>
                                     <td>{{ $payment->meterReading->reading_for_month->format('m-Y') }}</td>

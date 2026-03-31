@@ -2,12 +2,13 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
 use App\Models\Payment;
-use Illuminate\Support\Facades\Auth;
+use App\Support\ArabicMonth;
 use Carbon\Carbon;
-use Illuminate\Auth\Access\AuthorizationException;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 
 class MonthlyPaymentReport extends Component
 {
@@ -22,12 +23,10 @@ class MonthlyPaymentReport extends Component
     public function mount()
     {
         try {
-            // Check if user can view payments
             $this->authorize('viewAny', Payment::class);
 
             $this->initializeFilters();
             $this->loadPayments();
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض تقارير الدفعات', 'danger');
         } catch (Exception $e) {
@@ -53,10 +52,9 @@ class MonthlyPaymentReport extends Component
             $this->selectedYear = Carbon::now()->year;
             $this->selectedMonth = Carbon::now()->month;
 
-            // Get available years from the user's clients' payments
             $this->years = Payment::whereHas('client', function ($query) {
-                    $query->where('user_id', Auth::id());
-                })
+                $query->where('user_id', Auth::id());
+            })
                 ->selectRaw("strftime('%Y', paid_at) as year")
                 ->distinct()
                 ->orderBy('year', 'desc')
@@ -67,21 +65,7 @@ class MonthlyPaymentReport extends Component
                 $this->years = [$this->selectedYear];
             }
 
-            $this->months = [
-                '1' => 'كانون الثاني',
-                '2' => 'شباط',
-                '3' => 'آذار',
-                '4' => 'نيسان',
-                '5' => 'أيار',
-                '6' => 'حزيران',
-                '7' => 'تموز',
-                '8' => 'آب',
-                '9' => 'أيلول',
-                '10' => 'تشرين الأول',
-                '11' => 'تشرين الثاني',
-                '12' => 'كانون الأول',
-            ];
-
+            $this->months = ArabicMonth::all(true);
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تهيئة الفلاتر', 'danger');
         }
@@ -102,7 +86,6 @@ class MonthlyPaymentReport extends Component
                 })
                 ->orderBy('paid_at', 'desc')
                 ->get();
-
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تحميل بيانات الدفعات', 'danger');
             $this->payments = collect();
@@ -122,7 +105,7 @@ class MonthlyPaymentReport extends Component
     }
 
     public function render()
-    {   
+    {
         return view('livewire.monthly-payment-report');
     }
 }

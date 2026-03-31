@@ -2,13 +2,14 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
 use App\Models\FuelConsumption;
 use App\Models\Generator;
-use Illuminate\Support\Facades\Auth;
+use App\Support\ArabicMonth;
 use Carbon\Carbon;
-use Illuminate\Auth\Access\AuthorizationException;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 use Native\Desktop\Facades\Alert;
 
 class FuelConsumptionsReport extends Component
@@ -24,7 +25,6 @@ class FuelConsumptionsReport extends Component
     public $alertType = null;
     public $showConsumptionModal = false;
 
-    // Form fields
     public $generator_id;
     public $liters_consumed;
     public $notes;
@@ -51,7 +51,6 @@ class FuelConsumptionsReport extends Component
             $this->generators = Generator::where('user_id', Auth::id())->get();
             $this->initializeFilters();
             $this->loadConsumptions();
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض استهلاك الوقود', 'danger');
         } catch (Exception $e) {
@@ -76,9 +75,8 @@ class FuelConsumptionsReport extends Component
         try {
             $this->selectedYear = Carbon::now()->year;
             $this->selectedMonth = Carbon::now()->month;
-            $this->selectedGenerator = 'all'; // Default to show all generators
+            $this->selectedGenerator = 'all';
 
-            // Get available years from user's fuel consumptions
             $this->years = FuelConsumption::where('user_id', Auth::id())
                 ->selectRaw("strftime('%Y', created_at) as year")
                 ->distinct()
@@ -90,21 +88,7 @@ class FuelConsumptionsReport extends Component
                 $this->years = [$this->selectedYear];
             }
 
-            $this->months = [
-                '1' => 'كانون الثاني',
-                '2' => 'شباط',
-                '3' => 'آذار',
-                '4' => 'نيسان',
-                '5' => 'أيار',
-                '6' => 'حزيران',
-                '7' => 'تموز',
-                '8' => 'آب',
-                '9' => 'أيلول',
-                '10' => 'تشرين الأول',
-                '11' => 'تشرين الثاني',
-                '12' => 'كانون الأول',
-            ];
-
+            $this->months = ArabicMonth::all(true);
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تهيئة الفلاتر', 'danger');
         }
@@ -126,7 +110,6 @@ class FuelConsumptionsReport extends Component
                 })
                 ->orderBy('created_at', 'desc')
                 ->get();
-
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تحميل بيانات الاستهلاك', 'danger');
             $this->consumptions = collect();
@@ -193,7 +176,6 @@ class FuelConsumptionsReport extends Component
             $this->closeConsumptionModal();
             $this->loadConsumptions();
             $this->setAlert('تم إضافة استهلاك الوقود بنجاح', 'success');
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لإضافة استهلاك وقود', 'danger');
         } catch (Exception $e) {
@@ -224,7 +206,6 @@ class FuelConsumptionsReport extends Component
 
             $this->loadConsumptions();
             $this->setAlert('تم حذف استهلاك الوقود بنجاح.', 'success');
-
         } catch (AuthorizationException $e) {
             $this->setAlert('لا يمكنك حذف استهلاك الوقود', 'danger');
         } catch (Exception $e) {

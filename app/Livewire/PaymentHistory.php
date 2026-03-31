@@ -2,13 +2,16 @@
 
 namespace App\Livewire;
 
-use Exception;
-use Carbon\Carbon;
 use App\Models\Client;
+use App\Models\MeterReading;
 use App\Models\Payment;
-use Livewire\Component;
-use Illuminate\Support\Facades\Auth;
+use App\Support\ArabicMonth;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
+use Native\Desktop\Facades\Alert;
 
 class PaymentHistory extends Component
 {
@@ -47,7 +50,6 @@ class PaymentHistory extends Component
     private function loadClientData()
     {
         try {
-            // Only load client if it belongs to the current user
             $this->client = Client::where('user_id', Auth::id())
                 ->find($this->clientId);
 
@@ -56,9 +58,7 @@ class PaymentHistory extends Component
                 return;
             }
 
-            // Check if user can view payments for this client
             $this->authorize('viewAny', Payment::class);
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض دفعات هذا المشترك', 'danger');
             $this->client = null;
@@ -75,13 +75,12 @@ class PaymentHistory extends Component
                 return;
             }
 
-            // Set current year as default
-            $this->selectedYear = Carbon::now()->year;
-            
-            // Get available years from payments - only for this user's clients
-            $this->years = Payment::whereHas('client', function($query) {
-                    $query->where('user_id', Auth::id());
-                })
+            $defaultYear = $this->selectedYear ?: Carbon::now()->year;
+
+            $this->years = Payment::whereHas('client', function ($query) {
+                $query->where('user_id', Auth::id());
+            })
+                ->withTrashed()
                 ->where('client_id', $this->clientId)
                 ->selectRaw("strftime('%Y', paid_at) as year")
                 ->distinct()
@@ -89,29 +88,17 @@ class PaymentHistory extends Component
                 ->pluck('year')
                 ->toArray();
 
-            // If no payments found, set current year
             if (empty($this->years)) {
-                $this->years = [$this->selectedYear];
+                $this->years = [$defaultYear];
             }
 
-            // Initialize months
-            $this->months = [
-                '' => 'كل الأشهر',
-                '1' => 'كانون الثاني',
-                '2' => 'شباط',
-                '3' => 'آذار',
-                '4' => 'نيسان',
-                '5' => 'أيار',
-                '6' => 'حزيران',
-                '7' => 'تموز',
-                '8' => 'آب',
-                '9' => 'أيلول',
-                '10' => 'تشرين الأول',
-                '11' => 'تشرين الثاني',
-                '12' => 'كانون الأول',
-            ];
+            $availableYears = array_map('strval', $this->years);
+            $this->selectedYear = in_array((string) $defaultYear, $availableYears, true)
+                ? $defaultYear
+                : $this->years[0];
 
-            $this->selectedMonth = ''; // All months by default
+            $this->months = ArabicMonth::all(true, true);
+            $this->selectedMonth = $this->selectedMonth ?? '';
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تهيئة الفلاتر', 'danger');
         }
@@ -125,21 +112,20 @@ class PaymentHistory extends Component
                 return;
             }
 
-            // Load payments only for this client and ensure client belongs to user
-            $this->payments = Payment::with(['meterReading'])
-                ->whereHas('client', function($query) {
+            $this->payments = Payment::withTrashed()
+                ->with(['meterReading'])
+                ->whereHas('client', function ($query) {
                     $query->where('user_id', Auth::id());
                 })
                 ->where('client_id', $this->clientId)
-                ->when($this->selectedYear, function($query) {
+                ->when($this->selectedYear, function ($query) {
                     $query->whereYear('paid_at', $this->selectedYear);
                 })
-                ->when($this->selectedMonth, function($query) {
+                ->when($this->selectedMonth, function ($query) {
                     $query->whereMonth('paid_at', $this->selectedMonth);
                 })
                 ->orderBy('paid_at', 'desc')
                 ->get();
-
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تحميل الدفعات', 'danger');
             $this->payments = collect();
@@ -156,6 +142,56 @@ class PaymentHistory extends Component
     {
         $this->clearAlert();
         $this->loadPayments();
+    }
+
+    public function confirmDelete($id)
+    {
+        $buttonIndex = Alert::title('تأكيد الحذف')
+            ->buttons(['إلغاء', 'نعم'])
+            ->show('هل أنت متأكد من حذف هذه الدفعة؟');
+
+        if ($buttonIndex === 1) {
+            $this->deletePayment($id);
+        }
+    }
+
+    public function deletePayment($paymentId)
+    {
+        try {
+            $payment = Payment::whereHas('client', function ($query) {
+                $query->where('user_id', Auth::id());
+            })
+                ->where('client_id', $this->clientId)
+                ->with('meterReading')
+                ->findOrFail($paymentId);
+
+            if (!$payment->belongsToLatestCompletedReading()) {
+                $this->setAlert('يمكن حذف دفعات آخر قراءة مكتملة فقط.', 'danger');
+                return;
+            }
+
+            $this->authorize('delete', $payment);
+
+            $payment->deleteWithAutoHandling();
+
+            $this->clearAlert();
+            $this->initializeFilters();
+            $this->loadPayments();
+            $this->setAlert('تم حذف الدفعة بنجاح.', 'success');
+        } catch (AuthorizationException $e) {
+            $this->setAlert('ليس لديك صلاحية لحذف هذه الدفعة', 'danger');
+        } catch (Exception $e) {
+            $this->setAlert('حدث خطأ أثناء حذف الدفعة', 'danger');
+        }
+    }
+
+    public function getLatestCompletedReadingIdProperty(): ?int
+    {
+        if (!$this->clientId) {
+            return null;
+        }
+
+        return MeterReading::latestCompletedForClient($this->clientId)?->id;
     }
 
     public function render()

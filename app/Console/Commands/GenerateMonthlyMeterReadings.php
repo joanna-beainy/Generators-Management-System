@@ -7,7 +7,6 @@ use App\Models\Maintenance;
 use App\Models\MeterReading;
 use Illuminate\Support\Carbon;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Auth;
 use Native\Desktop\Facades\Notification;
 
 class GenerateMonthlyMeterReadings extends Command
@@ -20,47 +19,45 @@ class GenerateMonthlyMeterReadings extends Command
         $now = Carbon::now();
         $targetMonth = $now->startOfMonth();
 
-        $this->info("📅 Generating meter readings for {$targetMonth->format('F Y')}...");
- 
+        $this->info("Generating meter readings for {$targetMonth->format('F Y')}...");
+
         $clients = Client::where('is_active', true)->get();
 
         foreach ($clients as $client) {
-            // Skip if a reading already exists for this month
             $alreadyExists = MeterReading::where('client_id', $client->id)
                 ->whereDate('reading_for_month', $targetMonth)
                 ->exists();
 
             if ($alreadyExists) {
-                $this->line("⏭️ Skipped client #{$client->id} — already has reading for {$targetMonth->format('F')}.");
+                $this->line("Skipped client #{$client->id} - already has reading for {$targetMonth->format('F')}.");
                 continue;
             }
 
-            $lastReading = MeterReading::latestForClient($client->id);
+            // initial_meter is the baseline used to start the next generated reading.
+            $previousMeter = $client->initial_meter ?? 0;
+            $pendingMaintenances = collect();
 
-            // Get the previous meter reading
-            $previousMeter = $lastReading?->current_meter ?? $client->initial_meter ?? 0;
-
-            // For offered clients, set everything to 0
             if ($client->is_offered) {
                 $amount = 0;
                 $maintenanceCosts = 0;
                 $previousBalance = 0;
                 $remainingAmount = 0;
             } else {
-                $amount = 0; // Will be calculated when meter is read
-                $maintenanceCosts = Maintenance::forClient($client->id)
+                $amount = 0;
+                $pendingMaintenances = Maintenance::forClient($client->id)
                     ->forMonth($targetMonth)
+                    ->whereNull('applied_meter_reading_id')
                     ->whereRaw("strftime('%d', created_at) < '28'")
-                    ->sum('amount');
-                $previousBalance = 0; // TEMPORARY - will be calculated when meter is read
-                $remainingAmount = $maintenanceCosts; // Only maintenance for now
+                    ->get();
+                $maintenanceCosts = (float) $pendingMaintenances->sum('amount');
+                $previousBalance = 0;
+                $remainingAmount = $maintenanceCosts;
             }
 
-            // Create the new meter reading
-            MeterReading::create([
+            $meterReading = MeterReading::create([
                 'client_id' => $client->id,
                 'previous_meter' => $previousMeter,
-                'current_meter' => $previousMeter, // Starts equal to previous
+                'current_meter' => $previousMeter,
                 'amount' => $amount,
                 'maintenance_cost' => $maintenanceCosts,
                 'previous_balance' => $previousBalance,
@@ -69,16 +66,20 @@ class GenerateMonthlyMeterReadings extends Command
                 'reading_for_month' => $targetMonth,
             ]);
 
-            
-            $this->line("✅ Created meter reading for client #{$client->id} for {$targetMonth->format('F')}.");
+            if ($pendingMaintenances->isNotEmpty()) {
+                Maintenance::whereIn('id', $pendingMaintenances->pluck('id'))
+                    ->update(['applied_meter_reading_id' => $meterReading->id]);
+            }
+
+            $this->line("Created meter reading for client #{$client->id} for {$targetMonth->format('F')}.");
         }
 
-        $this->info('🎯 Monthly meter readings generated successfully.');
+        $this->info('Monthly meter readings generated successfully.');
 
         try {
             Notification::new()
-                ->title('📅 Readings Generated')
-                ->message("Monthly meter readings for all active clients have been generated.")
+                ->title('Readings Generated')
+                ->message('Monthly meter readings for all active clients have been generated.')
                 ->show();
         } catch (\Exception $e) {
             // Ignore notification failures

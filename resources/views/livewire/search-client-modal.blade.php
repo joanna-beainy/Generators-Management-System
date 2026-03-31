@@ -40,6 +40,7 @@
                                 x-ref="clientSearch"
                                 autofocus
                                 wire:model.live.debounce.300ms="search"
+                                wire:keydown.enter="confirmSearchSelection"
                                 class="form-control border-0 py-2"
                                 placeholder="اكتب اسم المشترك أو رقمه..."
                                 style="text-align: right; box-shadow: none;">

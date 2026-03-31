@@ -2,13 +2,14 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use App\Models\GeneratorMaintenance;
 use App\Models\Generator;
-use Illuminate\Support\Facades\Auth;
+use App\Models\GeneratorMaintenance;
+use App\Support\ArabicMonth;
 use Carbon\Carbon;
-use Illuminate\Auth\Access\AuthorizationException;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 use Native\Desktop\Facades\Alert;
 
 class GeneratorsMaintenanceReport extends Component
@@ -24,7 +25,6 @@ class GeneratorsMaintenanceReport extends Component
     public $alertType = null;
     public $showMaintenanceModal = false;
 
-    // Form fields
     public $generator_id;
     public $amount;
     public $description;
@@ -51,7 +51,6 @@ class GeneratorsMaintenanceReport extends Component
             $this->generators = Generator::where('user_id', Auth::id())->get();
             $this->initializeFilters();
             $this->loadMaintenances();
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض مصاريف الصيانة', 'danger');
         } catch (Exception $e) {
@@ -78,7 +77,6 @@ class GeneratorsMaintenanceReport extends Component
             $this->selectedMonth = Carbon::now()->month;
             $this->selectedGenerator = 'all';
 
-            // Get available years from user's maintenances
             $this->years = GeneratorMaintenance::where('user_id', Auth::id())
                 ->selectRaw("strftime('%Y', created_at) as year")
                 ->distinct()
@@ -90,21 +88,7 @@ class GeneratorsMaintenanceReport extends Component
                 $this->years = [$this->selectedYear];
             }
 
-            $this->months = [
-                '1' => 'كانون الثاني',
-                '2' => 'شباط',
-                '3' => 'آذار',
-                '4' => 'نيسان',
-                '5' => 'أيار',
-                '6' => 'حزيران',
-                '7' => 'تموز',
-                '8' => 'آب',
-                '9' => 'أيلول',
-                '10' => 'تشرين الأول',
-                '11' => 'تشرين الثاني',
-                '12' => 'كانون الأول',
-            ];
-
+            $this->months = ArabicMonth::all(true);
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تهيئة الفلاتر', 'danger');
         }
@@ -126,7 +110,6 @@ class GeneratorsMaintenanceReport extends Component
                 })
                 ->orderBy('created_at', 'desc')
                 ->get();
-
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تحميل بيانات الصيانة', 'danger');
             $this->maintenances = collect();
@@ -193,7 +176,6 @@ class GeneratorsMaintenanceReport extends Component
             $this->closeMaintenanceModal();
             $this->loadMaintenances();
             $this->setAlert('تم إضافة مصاريف الصيانة بنجاح', 'success');
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لإضافة مصاريف صيانة', 'danger');
         } catch (Exception $e) {
@@ -224,7 +206,6 @@ class GeneratorsMaintenanceReport extends Component
 
             $this->loadMaintenances();
             $this->setAlert('تم حذف مصاريف الصيانة بنجاح.', 'success');
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لحذف مصاريف الصيانة هذه.', 'danger');
         } catch (Exception $e) {

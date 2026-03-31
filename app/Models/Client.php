@@ -81,6 +81,11 @@ class Client extends Model
     }
 
     // Scopes
+    public function scopeForUser($query, $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
@@ -142,6 +147,11 @@ class Client extends Model
                 });
             }
         });
+    }
+
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('id');
     }
 
 

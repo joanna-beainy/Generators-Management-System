@@ -2,12 +2,13 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
 use App\Models\FuelPurchase;
-use Illuminate\Support\Facades\Auth;
+use App\Support\ArabicMonth;
 use Carbon\Carbon;
-use Illuminate\Auth\Access\AuthorizationException;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 use Native\Desktop\Facades\Alert;
 
 class FuelPurchasesReport extends Component
@@ -21,10 +22,8 @@ class FuelPurchasesReport extends Component
     public $alertType = null;
     public $showPurchaseModal = false;
 
-    // Statistics
     public $totalAvailableLiters;
 
-    // Form fields
     public $company;
     public $liters_purchased;
     public $total_price;
@@ -54,7 +53,6 @@ class FuelPurchasesReport extends Component
             $this->initializeFilters();
             $this->loadPurchases();
             $this->loadTotalStatistics();
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض مشتريات الوقود', 'danger');
         } catch (Exception $e) {
@@ -80,7 +78,6 @@ class FuelPurchasesReport extends Component
             $this->selectedYear = Carbon::now()->year;
             $this->selectedMonth = Carbon::now()->month;
 
-            // Get available years from user's fuel purchases
             $this->years = FuelPurchase::where('user_id', Auth::id())
                 ->selectRaw("strftime('%Y', created_at) as year")
                 ->distinct()
@@ -92,21 +89,7 @@ class FuelPurchasesReport extends Component
                 $this->years = [$this->selectedYear];
             }
 
-            $this->months = [
-                '1' => 'كانون الثاني',
-                '2' => 'شباط',
-                '3' => 'آذار',
-                '4' => 'نيسان',
-                '5' => 'أيار',
-                '6' => 'حزيران',
-                '7' => 'تموز',
-                '8' => 'آب',
-                '9' => 'أيلول',
-                '10' => 'تشرين الأول',
-                '11' => 'تشرين الثاني',
-                '12' => 'كانون الأول',
-            ];
-
+            $this->months = ArabicMonth::all(true);
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تهيئة الفلاتر', 'danger');
         }
@@ -124,7 +107,6 @@ class FuelPurchasesReport extends Component
                 })
                 ->orderBy('created_at', 'desc')
                 ->get();
-
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تحميل بيانات المشتريات', 'danger');
             $this->purchases = collect();
@@ -134,10 +116,8 @@ class FuelPurchasesReport extends Component
     public function loadTotalStatistics()
     {
         try {
-            // Get total available liters from ALL purchases (not filtered by month)
             $this->totalAvailableLiters = FuelPurchase::where('user_id', Auth::id())
                 ->sum('remaining_liters');
-
         } catch (Exception $e) {
             $this->totalAvailableLiters = 0;
         }
@@ -199,9 +179,8 @@ class FuelPurchasesReport extends Component
 
             $this->closePurchaseModal();
             $this->loadPurchases();
-            $this->loadTotalStatistics(); // Reload statistics after adding new purchase
+            $this->loadTotalStatistics();
             $this->setAlert('تم إضافة شراء الوقود بنجاح', 'success');
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لإضافة مشتريات وقود', 'danger');
         } catch (Exception $e) {
@@ -231,9 +210,8 @@ class FuelPurchasesReport extends Component
             $purchase->delete();
 
             $this->loadPurchases();
-            $this->loadTotalStatistics(); // Reload statistics after deletion
+            $this->loadTotalStatistics();
             $this->setAlert('تم حذف شراء الوقود بنجاح.', 'success');
-
         } catch (AuthorizationException $e) {
             $this->setAlert('لا يمكنك حذف شراء الوقود', 'danger');
         } catch (Exception $e) {

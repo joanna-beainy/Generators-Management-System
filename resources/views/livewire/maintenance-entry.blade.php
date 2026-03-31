@@ -32,11 +32,14 @@
             x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
             x-transition:leave="transition ease-in duration-300"
             x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            class="alert alert-{{ $alertType }} alert-dismissible fade show text-center rounded-3 shadow-sm mb-4">
-            <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-1"></i>
-            {{ $alertMessage }}
-            <button type="button" class="btn-close" wire:click="$set('alertMessage', null)"></button>
+            x-transition:leave-end="opacity-0">
+            <div class="alert alert-{{ $alertType }} border-0 text-center rounded-3 shadow-sm mb-4 position-relative">
+                <button type="button" class="btn-close position-absolute top-50 translate-middle-y" style="right: 1rem;" wire:click="$set('alertMessage', null)"></button>
+                <div class="d-flex align-items-center justify-content-center">
+                    <i class="bi {{ $alertType === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle' }} me-2"></i>
+                    {{ $alertMessage }}
+                </div>
+            </div>
         </div>
     @endif
 
@@ -94,12 +97,12 @@
                 
                 <!-- Show maintenance form for regular clients -->
                 <div class="border-0 rounded-4 p-4 pb-2 bg-light shadow-sm" wire:key="maintenance-form-{{ $selectedClient->id }}">
-                    <div class="d-flex align-items-center mb-4">
-                        <div class="bg-white p-3 rounded-circle shadow-sm me-3">
-                            <i class="bi bi-person text-success h4 mb-0"></i>
-                        </div>
-                        <div>
-                            <h5 class="fw-bold mb-0 text-dark">{{ $selectedClient->full_name }}</h5>
+                    <div class="w-100 text-start" style="margin-bottom: var(--fluid-v-gap);">
+                        <div class="d-inline-flex align-items-center bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-4 py-2">
+                            <i class="bi bi-person-badge fs-4 me-2"></i>
+                            <span class="fw-bold fs-5">{{ $selectedClient->full_name }}</span>
+                            <span class="mx-3 opacity-50">|</span>
+                            <span class="fs-6 fw-bold">الرقم: {{ $selectedClient->id }}</span>
                         </div>
                     </div>
                     
@@ -111,14 +114,13 @@
                                 <div class="input-group">
                                     <input type="number" 
                                            wire:model="amount" 
-                                           x-init="$el.focus()"
                                            class="form-control border-0" 
                                            step="0.50" 
                                            min="0.50"
                                            placeholder="0.00"
                                            required
                                            style="text-align: right; box-shadow: shadow-sm;">
-                                    <span class="input-group-text border-0 bg-white text-success fw-bold">$</span>
+                                    <span class="input-group-text text-success fw-bold">$</span>
                                 </div>
                                 @error('amount')
                                     <div class="text-danger small mt-1 ms-2">{{ $message }}</div>

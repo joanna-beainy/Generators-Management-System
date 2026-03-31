@@ -10,6 +10,15 @@ class MeterReading extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::saving(function (MeterReading $meterReading) {
+            if ((int) $meterReading->current_meter < (int) $meterReading->previous_meter) {
+                throw new \InvalidArgumentException('العداد الحالي يجب أن يكون أكبر من أو يساوي العداد السابق.');
+            }
+        });
+    }
+
     protected $fillable = [
         'client_id',
         'previous_meter',
@@ -68,19 +77,47 @@ class MeterReading extends Model
     }
 
     // Static helpers
-    public static function latestForClient($clientId)
-    {
-        return self::where('client_id', $clientId)
-            ->orderByDesc('reading_for_month')
-            ->first();
-    }
-
     public static function latestCompletedForClient($clientId)
     {
         return self::where('client_id', $clientId)
             ->whereNotNull('reading_date') // Only completed readings
             ->orderByDesc('reading_for_month')
             ->first();
+    }
+
+    public static function actualPreviousBalanceForClientBeforeMonth(int $clientId, $currentMonth): float
+    {
+        $previousReading = self::where('client_id', $clientId)
+            ->beforeMonth($currentMonth)
+            ->completed()
+            ->latest()
+            ->first();
+
+        return (float) ($previousReading?->remaining_amount ?? 0);
+    }
+
+    public static function syncLatestPendingBaselineForClient(int $clientId, int $baselineMeter): void
+    {
+        $latestPendingReading = self::where('client_id', $clientId)
+            ->pending()
+            ->latest('reading_for_month')
+            ->first();
+
+        if (!$latestPendingReading) {
+            return;
+        }
+
+        if (
+            (int) $latestPendingReading->previous_meter === $baselineMeter &&
+            (int) $latestPendingReading->current_meter === $baselineMeter
+        ) {
+            return;
+        }
+
+        $latestPendingReading->update([
+            'previous_meter' => $baselineMeter,
+            'current_meter' => $baselineMeter,
+        ]);
     }
 
     public static function latestMonthReadings(int $userId)

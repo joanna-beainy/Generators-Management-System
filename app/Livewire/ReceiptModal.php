@@ -2,26 +2,26 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
 use App\Models\Client;
+use App\Models\ExchangeRate;
 use App\Models\MeterReading;
 use App\Models\Payment;
-use App\Models\ExchangeRate;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Auth\Access\AuthorizationException;
+use App\Support\ArabicMonth;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 
 class ReceiptModal extends Component
 {
     public $show = false;
     public $receiptData = [];
     public $receiptsData = [];
-    public $mode = 'single'; // 'single' or 'bulk'
+    public $mode = 'single';
 
-    public $search = ''; 
+    public $search = '';
     public $unpaidClients = [];
-    public $selectedClientId = null; 
+    public $selectedClientId = null;
     public $showSearchResults = false;
     public $alertMessage = null;
     public $alertType = null;
@@ -48,21 +48,18 @@ class ReceiptModal extends Component
         $this->alertType = null;
     }
 
-    // Get the current exchange rate dynamically
     public function getExchangeRateProperty()
     {
         return ExchangeRate::getCurrentRate(Auth::id());
     }
 
-    // Open single receipt modal after payment 
     public function openSingleModal($clientId)
     {
         try {
-            // Check if user can view the client 
-            $client = Client::where('id', $clientId)
-                ->where('user_id', Auth::id())
+            $client = Client::forUser(Auth::id())
+                ->where('id', $clientId)
                 ->firstOrFail();
-            
+
             $this->authorize('view', $client);
 
             $payment = Payment::where('client_id', $clientId)
@@ -77,7 +74,6 @@ class ReceiptModal extends Component
             $this->receiptData = $this->generateReceiptData($clientId, $payment);
             $this->mode = 'single';
             $this->show = true;
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض إيصال هذا المشترك', 'danger');
         } catch (Exception $e) {
@@ -85,11 +81,9 @@ class ReceiptModal extends Component
         }
     }
 
-    // Open bulk receipts modal 
     public function openBulkModal()
     {
         try {
-            // Check if user can view clients in general
             $this->authorize('viewAny', Client::class);
 
             $this->reset(['search', 'selectedClientId']);
@@ -99,7 +93,6 @@ class ReceiptModal extends Component
             $this->loadBulkReceipts();
             $this->show = true;
             $this->dispatch('focus-receipt-search');
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض الإيصالات', 'danger');
         } catch (Exception $e) {
@@ -110,43 +103,17 @@ class ReceiptModal extends Component
     public function handleSearch()
     {
         try {
-            $this->loadUnpaidClients();
-            $this->loadBulkReceipts();
-            $this->showSearchResults = filled(trim($this->search));
-
-            // Auto-select if only one result
-            if ($this->unpaidClients->count() === 1) {
-                $this->selectedClientId = $this->unpaidClients->first()->id;
-                $this->showSearchResults = false;
-                $this->loadBulkReceipts(); 
-            } else {
-                $this->selectedClientId = null;
-            }
+            $this->refreshBulkReceiptSearch(true);
             $this->dispatch('focus-receipt-search');
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء البحث', 'danger');
         }
     }
 
-    public function updatedSelectedClientId()
-    {
-        try {
-            if ($this->selectedClientId) {
-                $this->showSearchResults = false;
-            }
-            $this->loadBulkReceipts();
-        } catch (Exception $e) {
-            $this->setAlert('حدث خطأ أثناء تحميل بيانات الإيصالات', 'danger');
-        }
-    }
-
     public function updatedSearch()
     {
         try {
-            $this->selectedClientId = null;
-            $this->showSearchResults = filled(trim($this->search));
-            $this->loadUnpaidClients();
-            $this->loadBulkReceipts();
+            $this->refreshBulkReceiptSearch(false);
             $this->dispatch('focus-receipt-search');
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء البحث', 'danger');
@@ -176,21 +143,34 @@ class ReceiptModal extends Component
         $this->dispatch('focus-receipt-search');
     }
 
-    // Load unpaid clients - Ensuring we get latest COMPLETED reading 
+    private function refreshBulkReceiptSearch(bool $allowAutoSelect): void
+    {
+        $this->selectedClientId = null;
+        $this->showSearchResults = filled(trim($this->search));
+        $this->loadUnpaidClients();
+
+        if ($allowAutoSelect && $this->unpaidClients->count() === 1) {
+            $this->selectedClientId = $this->unpaidClients->first()->id;
+            $this->showSearchResults = false;
+        }
+
+        $this->loadBulkReceipts();
+    }
+
     private function loadUnpaidClients()
     {
         try {
-            $clientsQuery = Client::where('user_id', Auth::id())
-                ->where('is_offered', false)
+            $clientsQuery = Client::forUser(Auth::id())
+                ->notOffered()
                 ->with([
                     'meterReadings' => function ($q) {
                         $q->whereNotNull('reading_date')
-                        ->orderByDesc('reading_for_month')
-                        ->limit(1);
+                            ->orderByDesc('reading_for_month')
+                            ->limit(1);
                     },
                     'user.kilowattPrice',
                     'meterCategory',
-                    'user.phoneNumbers'
+                    'user.phoneNumbers',
                 ]);
 
             if (!empty($this->search)) {
@@ -200,27 +180,23 @@ class ReceiptModal extends Component
             $clients = $clientsQuery->get()
                 ->filter(function ($client) {
                     $latest = $client->meterReadings->first();
-                    return $latest && ((float)$latest->remaining_amount > 0);
+                    return $latest && ((float) $latest->remaining_amount > 0);
                 })
                 ->map(function ($client) {
                     $latest = $client->meterReadings->first();
                     $client->setRelation('latestReading', $latest);
-                    $client->setAttribute('remaining_amount', (float)$latest->remaining_amount);
+                    $client->setAttribute('remaining_amount', (float) $latest->remaining_amount);
                     return $client;
                 })
                 ->values();
 
             $this->unpaidClients = $clients;
-
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تحميل بيانات المشتركين', 'danger');
             $this->unpaidClients = collect();
         }
     }
 
-
-
-    // Load receipts for all or filtered unpaid clients 
     private function loadBulkReceipts()
     {
         try {
@@ -233,28 +209,25 @@ class ReceiptModal extends Component
             }
 
             $this->receiptsData = $clients->map(function ($client) {
-                // Check if user can view this client's data
                 try {
                     $this->authorize('view', $client);
                 } catch (AuthorizationException $e) {
-                    return null; 
+                    return null;
                 }
 
-                // Get the latest COMPLETED reading
                 $latestReading = MeterReading::latestCompletedForClient($client->id);
-                    
-                if (!$latestReading) return null;
+                if (!$latestReading) {
+                    return null;
+                }
 
                 $kilowattPrice = $client->user->kilowattPrice->price ?? 0;
-                $consumptionAmount = round($latestReading->consumption * $kilowattPrice * 2) / 2;  // round amounts to the nearest 0.5 (half dollar)
-                $readingMonth = $latestReading->reading_for_month ?? now();
-                $arabicMonth = $this->getArabicMonthName($readingMonth);
+                $consumptionAmount = round($latestReading->consumption * $kilowattPrice * 2) / 2;
 
                 return [
                     'client_id' => $client->id,
                     'client_full_name' => $client->full_name,
                     'payment_date' => now()->format('d/m/Y'),
-                    'reading_for_month_arabic' => $arabicMonth,
+                    'reading_for_month_arabic' => ArabicMonth::label($latestReading->reading_for_month ?? now()),
                     'kilowatt_price' => $kilowattPrice,
                     'meter_category' => $client->meterCategory->category ?? 'N/A',
                     'meter_category_price' => $client->meterCategory->price ?? 0,
@@ -265,50 +238,43 @@ class ReceiptModal extends Component
                     'maintenance_cost' => $latestReading->maintenance_cost ?? 0,
                     'previous_balance' => $latestReading->previous_balance ?? 0,
                     'total_due' => $latestReading->total_due ?? 0,
-                    'amount_paid' => 0, // Bulk receipts show current due, not payments
+                    'amount_paid' => 0,
                     'remaining_after_payment' => $latestReading->remaining_amount ?? 0,
                     'user_name' => $client->user->name,
                     'user_phones' => $client->user->phoneNumbers->pluck('phone_number')->implode(' - '),
                 ];
             })->filter()->values()->toArray();
-
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تحميل بيانات الإيصالات', 'danger');
             $this->receiptsData = [];
         }
     }
 
-    // Generate data for a single receipt 
     private function generateReceiptData($clientId, $payment)
     {
         try {
             $client = Client::with(['meterCategory', 'user.kilowattPrice', 'user.phoneNumbers'])->find($clientId);
-            if (!$client) return [];
+            if (!$client) {
+                return [];
+            }
 
-            // Check if user can view this client's data
             $this->authorize('view', $client);
 
-            //Meter reading for this payment 
             $meterReading = $payment->meterReading;
-
-
             if (!$meterReading) {
                 $this->setAlert('لا توجد قراءة للمشترك', 'danger');
                 return [];
             }
 
             $kilowattPrice = $client->user->kilowattPrice->price ?? 0;
-            $consumptionAmount = round($meterReading->consumption * $kilowattPrice * 2) / 2;  // round amounts to the nearest 0.5 (half dollar)
-            $readingMonth = $meterReading->reading_for_month;
-            $arabicMonth = $this->getArabicMonthName($readingMonth);
+            $consumptionAmount = round($meterReading->consumption * $kilowattPrice * 2) / 2;
             $amountPaid = $payment->amount + $payment->discount;
-            $remainingAfterPayment = $meterReading->remaining_amount;
 
             return [
                 'client_id' => $client->id,
                 'client_full_name' => $client->full_name,
                 'payment_date' => $payment->paid_at->format('d/m/Y'),
-                'reading_for_month_arabic' => $arabicMonth,
+                'reading_for_month_arabic' => ArabicMonth::label($meterReading->reading_for_month),
                 'kilowatt_price' => $kilowattPrice,
                 'meter_category' => $client->meterCategory->category ?? 'N/A',
                 'meter_category_price' => $client->meterCategory->price ?? 0,
@@ -320,7 +286,7 @@ class ReceiptModal extends Component
                 'previous_balance' => $meterReading->previous_balance ?? 0,
                 'total_due' => $meterReading->total_due ?? 0,
                 'amount_paid' => $amountPaid,
-                'remaining_after_payment' => $remainingAfterPayment,
+                'remaining_after_payment' => $meterReading->remaining_amount,
                 'user_name' => $client->user->name,
                 'user_phones' => $client->user->phoneNumbers->pluck('phone_number')->implode(' - '),
             ];
@@ -331,17 +297,6 @@ class ReceiptModal extends Component
             $this->setAlert('حدث خطأ أثناء إنشاء بيانات الإيصال', 'danger');
             return [];
         }
-    }
-
-    // Arabic month translation 
-    private function getArabicMonthName($date)
-    {
-        $months = [
-            1 => 'كانون الثاني', 2 => 'شباط', 3 => 'آذار', 4 => 'نيسان',
-            5 => 'أيار', 6 => 'حزيران', 7 => 'تموز', 8 => 'آب',
-            9 => 'أيلول', 10 => 'تشرين الأول', 11 => 'تشرين الثاني', 12 => 'كانون الأول',
-        ];
-        return $months[$date->month] . ' ' . $date->year;
     }
 
     public function closeModal()

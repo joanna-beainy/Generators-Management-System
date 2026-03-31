@@ -2,13 +2,13 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
 use App\Models\MeterReading;
-use App\Models\Client;
-use Illuminate\Support\Facades\Auth;
+use App\Support\ArabicMonth;
 use Carbon\Carbon;
-use Illuminate\Auth\Access\AuthorizationException;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 
 class MonthlyMeterReadingsReport extends Component
 {
@@ -25,12 +25,10 @@ class MonthlyMeterReadingsReport extends Component
     public function mount()
     {
         try {
-            // Check if user can view meter readings
             $this->authorize('viewAny', MeterReading::class);
 
             $this->initializeFilters();
             $this->loadReadings();
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض تقارير قراءات العدادات', 'danger');
         } catch (Exception $e) {
@@ -53,10 +51,9 @@ class MonthlyMeterReadingsReport extends Component
     private function initializeFilters()
     {
         try {
-            // Get available years from meter readings
-            $this->years = MeterReading::whereHas('client', function($query) {
-                    $query->where('user_id', Auth::id());
-                })
+            $this->years = MeterReading::whereHas('client', function ($query) {
+                $query->where('user_id', Auth::id());
+            })
                 ->whereNotNull('reading_date')
                 ->selectRaw("strftime('%Y', reading_for_month) as year")
                 ->distinct()
@@ -64,15 +61,13 @@ class MonthlyMeterReadingsReport extends Component
                 ->pluck('year')
                 ->toArray();
 
-            // If no readings found, set current year
             if (empty($this->years)) {
                 $this->years = [Carbon::now()->year];
             }
 
-            // Set default to latest available month
-            $latestReading = MeterReading::whereHas('client', function($query) {
-                    $query->where('user_id', Auth::id());
-                })
+            $latestReading = MeterReading::whereHas('client', function ($query) {
+                $query->where('user_id', Auth::id());
+            })
                 ->whereNotNull('reading_date')
                 ->orderBy('reading_for_month', 'desc')
                 ->first();
@@ -85,22 +80,7 @@ class MonthlyMeterReadingsReport extends Component
                 $this->selectedMonth = Carbon::now()->month;
             }
 
-            // Initialize months
-            $this->months = [
-                '1' => 'كانون الثاني',
-                '2' => 'شباط',
-                '3' => 'آذار',
-                '4' => 'نيسان',
-                '5' => 'أيار',
-                '6' => 'حزيران',
-                '7' => 'تموز',
-                '8' => 'آب',
-                '9' => 'أيلول',
-                '10' => 'تشرين الأول',
-                '11' => 'تشرين الثاني',
-                '12' => 'كانون الأول',
-            ];
-
+            $this->months = ArabicMonth::all(true);
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تهيئة الفلاتر', 'danger');
         }
@@ -110,7 +90,7 @@ class MonthlyMeterReadingsReport extends Component
     {
         try {
             $this->readings = MeterReading::with('client')
-                ->whereHas('client', function($query) {
+                ->whereHas('client', function ($query) {
                     $query->where('user_id', Auth::id());
                 })
                 ->whereNotNull('reading_date')
@@ -118,7 +98,6 @@ class MonthlyMeterReadingsReport extends Component
                 ->whereMonth('reading_for_month', $this->selectedMonth)
                 ->orderBy('client_id')
                 ->get();
-
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تحميل بيانات القراءات الشهرية', 'danger');
         }
@@ -138,13 +117,12 @@ class MonthlyMeterReadingsReport extends Component
 
     public function getStatistics()
     {
-        $regularClients = $this->readings->filter(fn($r) => !$r->client->is_offered);
-        $offeredClients  = $this->readings->filter(fn($r) => $r->client->is_offered);
-        
+        $regularClients = $this->readings->filter(fn ($r) => !$r->client->is_offered);
+        $offeredClients = $this->readings->filter(fn ($r) => $r->client->is_offered);
+
         return [
             'consumption_offered' => $offeredClients->sum('consumption'),
             'consumption_regular' => $regularClients->sum('consumption'),
-
             'total_amount' => $regularClients->sum('amount'),
             'total_previous_balance' => $regularClients->sum('previous_balance'),
             'total_maintenance_cost' => $regularClients->sum('maintenance_cost'),
@@ -152,25 +130,11 @@ class MonthlyMeterReadingsReport extends Component
         ];
     }
 
-    public function getArabicMonthName()
-    {
-        $months = [
-            1 => 'كانون الثاني', 2 => 'شباط', 3 => 'آذار', 4 => 'نيسان',
-            5 => 'أيار', 6 => 'حزيران', 7 => 'تموز', 8 => 'آب',
-            9 => 'أيلول', 10 => 'تشرين الأول', 11 => 'تشرين الثاني', 12 => 'كانون الأول',
-        ];
-        
-        return $months[$this->selectedMonth] . ' ' . $this->selectedYear;
-    }
-
     public function render()
     {
-        $statistics = $this->getStatistics();
-        $arabicMonthName = $this->getArabicMonthName();
-        
         return view('livewire.monthly-meter-readings-report', [
-            'statistics' => $statistics,
-            'arabicMonthName' => $arabicMonthName,
+            'statistics' => $this->getStatistics(),
+            'arabicMonthName' => ArabicMonth::label($this->selectedMonth, (int) $this->selectedYear),
         ]);
     }
 }

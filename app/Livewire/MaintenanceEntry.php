@@ -43,11 +43,11 @@ class MaintenanceEntry extends Component
 
     public function loadClientsForSearch()
     {
-        return Client::where('user_id', Auth::id())
-            ->where('is_offered', false)
+        return Client::forUser(Auth::id())
+            ->notOffered()
             ->active()
             ->search($this->search)
-            ->orderBy('id')
+            ->ordered()
             ->get();
     }
 
@@ -57,38 +57,20 @@ class MaintenanceEntry extends Component
             return null;
         }
 
-        $client = Client::where('user_id', Auth::id())
+        $client = Client::forUser(Auth::id())
             ->find($this->selectedClientId);
-
-        if ($client) {
-            $client->latest_meter_reading = MeterReading::latestForClient($client->id);
-        }
 
         return $client;
     }
 
     public function handleSearch()
     {
-        $this->resetValidation();
-        $this->clearAlert();
-        $this->showSearchResults = filled(trim($this->search));
-        
-        // Auto-select if only one result
-        $clients = $this->loadClientsForSearch();
-        if ($clients->count() === 1) {
-            $this->selectedClientId = $clients->first()->id;
-            $this->showSearchResults = false;
-        } else {
-            $this->selectedClientId = null;
-        }
+        $this->refreshSearchState(true);
     }
 
     public function updatedSearch()
     {
-        $this->selectedClientId = null;
-        $this->resetValidation();
-        $this->clearAlert();
-        $this->showSearchResults = filled(trim($this->search));
+        $this->refreshSearchState(false);
     }
 
     public function selectClient($clientId)
@@ -104,15 +86,6 @@ class MaintenanceEntry extends Component
         $this->clearAlert();
     }
 
-    public function updatedSelectedClientId($value)
-    {
-        if ($value) {
-            $this->showSearchResults = false;
-            $this->resetValidation();
-            $this->clearAlert();
-        }
-    }
-
     public function resetFilters()
     {
         $this->search = '';
@@ -122,6 +95,21 @@ class MaintenanceEntry extends Component
         $this->showSearchResults = false;
         $this->resetValidation();
         $this->clearAlert();
+    }
+
+    private function refreshSearchState(bool $allowAutoSelect): void
+    {
+        $this->selectedClientId = null;
+        $this->resetValidation();
+        $this->clearAlert();
+        $this->showSearchResults = filled(trim($this->search));
+
+        $clients = $this->loadClientsForSearch();
+
+        if ($allowAutoSelect && $clients->count() === 1) {
+            $this->selectedClientId = $clients->first()->id;
+            $this->showSearchResults = false;
+        }
     }
 
     public function clearAlert()
@@ -153,7 +141,7 @@ class MaintenanceEntry extends Component
             );
 
             // Success message
-            $this->setAlert(" تم إدخال مصاريف الصيانة بنجاح للمشترك {$client->full_name}", 'success');
+            $this->setAlert("تم إدخال مصاريف الصيانة بنجاح", 'success');
 
             // Reset form
             $this->amount = '';

@@ -12,19 +12,17 @@
 
                 <div class="modal-body p-4 bg-white">
 
-                    <!-- Loading state -->
                     <div x-show="modalLoading" class="text-center py-5">
                         <div class="spinner-border text-success" role="status" aria-hidden="true" style="width: 3rem; height: 3rem;"></div>
                         <div class="mt-3 text-secondary fw-bold">جاري تحميل البيانات...</div>
                     </div>
 
-                    <!-- Form -->
                     <div x-show="!modalLoading" x-transition>
                         @if ($alertMessage)
-                            <div 
-                                x-data="{ show: true }" 
-                                x-show="show" 
-                                x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
+                            <div
+                                x-data="{ show: true }"
+                                x-show="show"
+                                x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)"
                                 x-transition:leave="transition ease-in duration-300"
                                 x-transition:leave-start="opacity-100"
                                 x-transition:leave-end="opacity-0">
@@ -39,88 +37,85 @@
                         @endif
 
                         <form wire:submit.prevent="updateClient">
-                            {{-- Personal info --}}
                             <div class="row g-3 mb-4">
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold">الاسم الأول <span class="text-danger">*</span></label>
-                                    <input type="text" 
-                                           wire:model="first_name" 
+                                    <input type="text"
+                                           wire:model="first_name"
                                            class="form-control rounded-pill border shadow-sm px-3 @error('first_name') is-invalid @enderror"
                                            placeholder="الاسم الأول" style="box-shadow: none;">
-                                    @error('first_name') 
-                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div> 
+                                    @error('first_name')
+                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div>
                                     @enderror
                                 </div>
 
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold">اسم الأب</label>
-                                    <input type="text" 
-                                           wire:model="father_name" 
+                                    <input type="text"
+                                           wire:model="father_name"
                                            class="form-control rounded-pill border shadow-sm px-3 @error('father_name') is-invalid @enderror"
                                            placeholder="اسم الأب" style="box-shadow: none;">
-                                    @error('father_name') 
-                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div> 
+                                    @error('father_name')
+                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div>
                                     @enderror
                                 </div>
 
                                 <div class="col-md-4">
                                     <label class="form-label fw-bold">الشهرة</label>
-                                    <input type="text" 
-                                           wire:model="last_name" 
+                                    <input type="text"
+                                           wire:model="last_name"
                                            class="form-control rounded-pill border shadow-sm px-3 @error('last_name') is-invalid @enderror"
                                            placeholder="الشهرة" style="box-shadow: none;">
-                                    @error('last_name') 
-                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div> 
+                                    @error('last_name')
+                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
 
-                            <!-- Contact info -->
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">رقم الهاتف</label>
-                                    <input type="text" 
-                                           wire:model="phone_number" 
+                                    <input type="text"
+                                           wire:model="phone_number"
                                            class="form-control rounded-pill border shadow-sm px-3 @error('phone_number') is-invalid @enderror"
                                            placeholder="رقم الهاتف" style="box-shadow: none;">
-                                    @error('phone_number') 
-                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div> 
+                                    @error('phone_number')
+                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div>
                                     @enderror
                                 </div>
 
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">العنوان <span class="text-danger">*</span></label>
-                                    <input type="text" 
-                                           wire:model="address" 
+                                    <input type="text"
+                                           wire:model="address"
                                            class="form-control rounded-pill border shadow-sm px-3 @error('address') is-invalid @enderror"
                                            placeholder="العنوان" style="box-shadow: none;">
-                                    @error('address') 
-                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div> 
+                                    @error('address')
+                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
 
-                            <!-- Generator & Category -->
                             <div class="row g-3 mb-4">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">المولد <span class="text-danger">*</span></label>
-                                    <select wire:model="generator_id" 
+                                    <select wire:model="generator_id"
                                             class="form-select rounded-pill border shadow-sm px-3 @error('generator_id') is-invalid @enderror"
                                             style="box-shadow: none;">
                                         <option value="">-- اختر المولد --</option>
-                                       @foreach ($generators as $generator)
+                                        @foreach ($generators as $generator)
                                             <option value="{{ $generator->id }}">{{ $generator->name }}</option>
                                         @endforeach
                                     </select>
-                                    @error('generator_id') 
-                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div> 
+                                    @error('generator_id')
+                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div>
                                     @enderror
                                 </div>
 
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold">فئة العداد</label>
-                                    <select wire:model="meter_category_id" 
-                                            class="form-select rounded-pill border shadow-sm px-3 @error('meter_category_id') is-invalid @enderror" 
+                                    <select wire:model="meter_category_id"
+                                            class="form-select rounded-pill border shadow-sm px-3 @error('meter_category_id') is-invalid @enderror"
                                             style="box-shadow: none;"
                                             @if($is_offered) disabled @endif>
                                         <option value="">-- اختر الفئة --</option>
@@ -134,28 +129,36 @@
                                 </div>
                             </div>
 
-                            <!-- Meter and offered -->
-                            <div class="row g-3 mb-5 align-items-center">
+                            <div class="row g-3 mb-5 align-items-start">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">العداد الحالي <span class="text-danger">*</span></label>
-                                    <input type="number" 
-                                           wire:model="current_meter" 
-                                           min="0" 
-                                           class="form-control text-end rounded-pill border shadow-sm px-3 @error('current_meter') is-invalid @enderror" 
+                                    <label class="form-label fw-bold">آخر عداد مسجل</label>
+                                    <input type="number"
+                                           value="{{ $actual_current_meter }}"
+                                           class="form-control text-end rounded-pill border shadow-sm px-3 bg-light"
+                                           readonly
+                                           style="box-shadow: none; text-align: right !important;">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">تعديل العداد<span class="text-danger">*</span></label>
+                                    <input type="number"
+                                           wire:model="initial_meter"
+                                           min="0"
+                                           class="form-control text-end rounded-pill border shadow-sm px-3 @error('initial_meter') is-invalid @enderror"
                                            placeholder="0"
                                            required
                                            style="box-shadow: none; text-align: right !important;">
-                                    @error('current_meter') 
-                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div> 
+                                    @error('initial_meter')
+                                        <div class="invalid-feedback ps-2 fw-bold small">{{ $message }}</div>
                                     @enderror
                                 </div>
 
                                 <div class="col-md-6">
                                     <div class="bg-primary-subtle p-3 rounded-4 border-0 mt-2">
                                         <div class="form-check">
-                                            <input class="form-check-input @error('is_offered') is-invalid @enderror" 
-                                                   type="checkbox" 
-                                                   wire:model.live="is_offered" 
+                                            <input class="form-check-input @error('is_offered') is-invalid @enderror"
+                                                   type="checkbox"
+                                                   wire:model.live="is_offered"
                                                    id="edit_is_offered"
                                                    style="width: 1.2rem; height: 1.2rem;">
                                             <label class="form-check-label fw-bold text-primary ms-2 pt-1" for="edit_is_offered">
@@ -171,7 +174,6 @@
 
                             <hr class="mb-4 text-secondary opacity-25">
 
-                            <!-- Buttons -->
                             <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-success rounded-pill px-5 py-2 shadow-sm fw-bold">
                                     <i class="bi bi-check-lg me-1"></i> تحديث البيانات

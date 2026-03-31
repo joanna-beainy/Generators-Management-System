@@ -2,13 +2,14 @@
 
 namespace App\Livewire;
 
-use Carbon\Carbon;
 use App\Models\Client;
-use Livewire\Component;
 use App\Models\MeterReading;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Auth\Access\AuthorizationException;
+use App\Support\ArabicMonth;
+use Carbon\Carbon;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 
 class MeterReadingFormReport extends Component
 {
@@ -23,16 +24,15 @@ class MeterReadingFormReport extends Component
     {
         try {
             $user = Auth::user();
-            
-            // Check if user can view meter readings
+
             $this->authorize('viewAny', MeterReading::class);
 
             $latestReading = MeterReading::whereHas('client', function ($q) use ($user) {
                 $q->where('user_id', $user->id)
-                ->where('is_active', true);
+                    ->where('is_active', true);
             })
-            ->orderByDesc('reading_for_month')
-            ->first();
+                ->orderByDesc('reading_for_month')
+                ->first();
 
             $this->selectedMonth = $latestReading
                 ? Carbon::parse($latestReading->reading_for_month)->month
@@ -42,14 +42,8 @@ class MeterReadingFormReport extends Component
                 ? Carbon::parse($latestReading->reading_for_month)->year
                 : Carbon::now()->year;
 
-            $arabicMonths = [
-                1 => 'كانون الثاني', 2 => 'شباط', 3 => 'آذار', 4 => 'نيسان',
-                5 => 'أيار', 6 => 'حزيران', 7 => 'تموز', 8 => 'آب',
-                9 => 'أيلول', 10 => 'تشرين الأول', 11 => 'تشرين الثاني', 12 => 'كانون الأول'
-            ];
-            $this->arabicMonthName = $arabicMonths[$this->selectedMonth] ?? '';
+            $this->arabicMonthName = ArabicMonth::name($this->selectedMonth);
 
-            // Pre-process the clients data with previous meter readings
             $this->clients = Client::where('user_id', $user->id)
                 ->where('is_active', true)
                 ->whereHas('meterReadings')
@@ -59,7 +53,7 @@ class MeterReadingFormReport extends Component
                 ->get()
                 ->map(function ($client) {
                     $latestReading = $client->meterReadings->first();
-                    
+
                     return [
                         'id' => $client->id,
                         'full_name' => $client->full_name,
@@ -67,7 +61,6 @@ class MeterReadingFormReport extends Component
                     ];
                 })
                 ->toArray();
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض تقرير قراءات العدادات', 'danger');
         } catch (Exception $e) {

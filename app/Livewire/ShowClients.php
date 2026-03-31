@@ -25,7 +25,16 @@ class ShowClients extends Component
 
     public $showEditModal = false;
     public $editingClient;
-    public $first_name, $father_name, $last_name, $phone_number, $address, $generator_id, $meter_category_id, $is_offered, $current_meter;
+    public $first_name;
+    public $father_name;
+    public $last_name;
+    public $phone_number;
+    public $address;
+    public $generator_id;
+    public $meter_category_id;
+    public $is_offered;
+    public $actual_current_meter;
+    public $initial_meter;
 
     protected $rules = [
         'first_name' => 'required|string|min:2|max:255',
@@ -36,7 +45,7 @@ class ShowClients extends Component
         'generator_id' => 'required|exists:generators,id',
         'meter_category_id' => 'nullable|exists:meter_categories,id',
         'is_offered' => 'boolean',
-        'current_meter' => 'required|numeric|min:0',
+        'initial_meter' => 'required|numeric|min:0',
     ];
 
     protected $messages = [
@@ -53,28 +62,25 @@ class ShowClients extends Component
         'generator_id.required' => 'يرجى اختيار المولد.',
         'generator_id.exists' => 'المولد المحدد غير صالح.',
         'meter_category_id.exists' => 'فئة العداد المحددة غير صالحة.',
-        'current_meter.required' => 'يرجى إدخال العداد الحالي.',
-        'current_meter.numeric' => 'العداد الحالي يجب أن يكون رقمياً.',
-        'current_meter.min' => 'العداد الحالي لا يمكن أن يكون أقل من صفر.',
+        'initial_meter.required' => 'يرجى إدخال عداد بداية القراءة القادمة.',
+        'initial_meter.numeric' => 'عداد بداية القراءة القادمة يجب أن يكون رقمياً.',
+        'initial_meter.min' => 'عداد بداية القراءة القادمة لا يمكن أن يكون أقل من صفر.',
     ];
 
     public function mount()
     {
         try {
-            // Check if user can view clients
             $this->authorize('viewAny', Client::class);
 
             $this->clients = collect();
             $this->displayClients = collect();
-            
-            // Check for session flash messages from create client
+
             if (session('alertMessage')) {
                 $this->alertMessage = session('alertMessage');
                 $this->alertType = session('alertType', 'success');
             }
 
             $this->loadClients();
-
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لعرض المشتركين', 'danger');
         } catch (Exception $e) {
@@ -91,16 +97,15 @@ class ShowClients extends Component
     public function loadClients()
     {
         try {
-            $this->clients = Client::where('user_id', Auth::id())
+            $this->clients = Client::forUser(Auth::id())
                 ->when($this->search, function ($query, $search) {
                     $query->search($search);
                 })
                 ->with(['generator', 'meterCategory'])
-                ->orderBy('id')
+                ->ordered()
                 ->get();
 
             $this->updateDisplayClients();
-
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تحميل قائمة المشتركين', 'danger');
             $this->clients = collect();
@@ -110,30 +115,12 @@ class ShowClients extends Component
 
     public function handleSearch()
     {
-        $this->loadClients();
-        $this->alertMessage = null;
-        $this->alertType = null;
-        $this->showSearchResults = filled(trim($this->search));
-
-        // Auto-select if only one result
-        if ($this->clients->count() === 1) {
-            $this->selectedClientId = $this->clients->first()->id;
-            $this->showSearchResults = false;
-            $this->updateDisplayClients();
-        } else {
-            $this->selectedClientId = null;
-            $this->updateDisplayClients();
-        }
+        $this->refreshSearchState(true);
     }
 
     public function updatedSearch()
     {
-        $this->loadClients();
-        $this->selectedClientId = null;
-        $this->alertMessage = null;
-        $this->alertType = null;
-        $this->showSearchResults = filled(trim($this->search));
-        $this->updateDisplayClients();
+        $this->refreshSearchState(false);
     }
 
     public function selectClient($clientId)
@@ -153,22 +140,9 @@ class ShowClients extends Component
     public function updateDisplayClients()
     {
         if ($this->selectedClientId) {
-            $this->displayClients = $this->clients->filter(fn($client) => $client->id == $this->selectedClientId);
+            $this->displayClients = $this->clients->filter(fn ($client) => $client->id == $this->selectedClientId);
         } else {
             $this->displayClients = $this->clients;
-        }
-    }
-
-    public function updatedSelectedClientId($value)
-    {
-        if ($value) {
-            $this->showSearchResults = false;
-            $this->resetValidation();
-            $this->alertMessage = null;
-            $this->alertType = null;
-            $this->updateDisplayClients();
-        } else {
-            $this->updateDisplayClients();
         }
     }
 
@@ -180,11 +154,27 @@ class ShowClients extends Component
         $this->loadClients();
     }
 
+    private function refreshSearchState(bool $allowAutoSelect): void
+    {
+        $this->loadClients();
+        $this->selectedClientId = null;
+        $this->alertMessage = null;
+        $this->alertType = null;
+        $this->showSearchResults = filled(trim($this->search));
+
+        if ($allowAutoSelect && $this->clients->count() === 1) {
+            $this->selectedClientId = $this->clients->first()->id;
+            $this->showSearchResults = false;
+        }
+
+        $this->updateDisplayClients();
+    }
+
     public function toggleActive($id)
     {
         try {
-            $client = Client::where('id', $id)
-                ->where('user_id', Auth::id())
+            $client = Client::forUser(Auth::id())
+                ->where('id', $id)
                 ->firstOrFail();
 
             $this->authorize('toggleActive', $client);
@@ -204,8 +194,8 @@ class ShowClients extends Component
     public function editClient($id)
     {
         try {
-            $client = Client::where('id', $id)
-                ->where('user_id', Auth::id())
+            $client = Client::forUser(Auth::id())
+                ->where('id', $id)
                 ->firstOrFail();
 
             $this->authorize('update', $client);
@@ -219,9 +209,19 @@ class ShowClients extends Component
             $this->generator_id = $client->generator_id;
             $this->meter_category_id = $client->meter_category_id;
             $this->is_offered = $client->is_offered;
-            
-            $latestReading = $client->meterReadings()->latest('reading_for_month')->first();
-            $this->current_meter = $latestReading?->current_meter ?? $client->initial_meter ?? 0;
+
+            $latestCompletedReading = $client->meterReadings()
+                ->whereNotNull('reading_date')
+                ->latest('reading_for_month')
+                ->first();
+
+            $latestPendingReading = $client->meterReadings()
+                ->pending()
+                ->latest('reading_for_month')
+                ->first();
+
+            $this->actual_current_meter = $latestCompletedReading?->current_meter ?? $client->initial_meter ?? 0;
+            $this->initial_meter = $latestPendingReading?->previous_meter ?? $client->initial_meter ?? $this->actual_current_meter;
 
             $this->showEditModal = true;
         } catch (AuthorizationException $e) {
@@ -235,12 +235,11 @@ class ShowClients extends Component
     {
         $this->validateOnly($propertyName);
 
-        // Only handle auto-clearing when is_offered is checked
         if ($propertyName === 'is_offered' && $this->is_offered) {
             $this->meter_category_id = '';
         }
     }
-    
+
     public function updateClient()
     {
         try {
@@ -261,40 +260,17 @@ class ShowClients extends Component
                 'address' => $this->address,
                 'generator_id' => $this->generator_id,
                 'is_offered' => $this->is_offered ?? false,
+                'initial_meter' => (int) $this->initial_meter,
             ];
 
             $updateData['meter_category_id'] = $this->is_offered ? null : $this->meter_category_id;
 
-            // Check if this is a new client (no meter readings yet)
-            $hasMeterReadings = MeterReading::where('client_id', $this->editingClient->id)->exists();
-            $meterUpdated = false;
-            
-            if (!$hasMeterReadings) {
-                // New client - update initial_meter only if different
-                if ($this->editingClient->initial_meter != $this->current_meter) {
-                    $updateData['initial_meter'] = $this->current_meter;
-                    $meterUpdated = true;
-                }
-            } else {
-                // Existing client - update current meter only if different
-                $latestReading = MeterReading::where('client_id', $this->editingClient->id)
-                    ->latest('reading_for_month')
-                    ->first();
-
-                if ($latestReading && $latestReading->current_meter != $this->current_meter) {
-                    $latestReading->update([
-                        'current_meter' => $this->current_meter,
-                    ]);
-                    $meterUpdated = true;
-                }
-            }
+            MeterReading::syncLatestPendingBaselineForClient($this->editingClient->id, (int) $this->initial_meter);
 
             $this->editingClient->update($updateData);
 
             $this->showEditModal = false;
-            
             $this->setAlert('تم تحديث بيانات المشترك بنجاح.', 'success');
-            
             $this->loadClients();
         } catch (ValidationException $e) {
             return;
@@ -310,8 +286,16 @@ class ShowClients extends Component
         $this->showEditModal = false;
         $this->resetValidation();
         $this->reset([
-            'first_name', 'father_name', 'last_name', 'phone_number',
-            'address', 'generator_id', 'meter_category_id', 'is_offered', 'current_meter'
+            'first_name',
+            'father_name',
+            'last_name',
+            'phone_number',
+            'address',
+            'generator_id',
+            'meter_category_id',
+            'is_offered',
+            'actual_current_meter',
+            'initial_meter',
         ]);
     }
 
@@ -326,7 +310,7 @@ class ShowClients extends Component
             $this->setAlert('حدث خطأ أثناء تحميل البيانات', 'danger');
             return view('livewire.show-clients', [
                 'generators' => collect(),
-                'categories' => collect()
+                'categories' => collect(),
             ]);
         }
     }

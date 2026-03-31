@@ -47,6 +47,8 @@ class PaymentPolicy
      */
     public function delete(User $user, Payment $payment): bool
     {
-        return $payment->client->user_id === $user->id;
+        return $payment->client->user_id === $user->id
+            && !$payment->trashed()
+            && $payment->belongsToLatestCompletedReading();
     }
 }

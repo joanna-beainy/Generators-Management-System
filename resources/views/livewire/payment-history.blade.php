@@ -2,9 +2,9 @@
 
     @if ($alertMessage)
         <div class="flex-shrink-0"
-            x-data="{ show: true }" 
-            x-show="show" 
-            x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
+            x-data="{ show: true }"
+            x-show="show"
+            x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)"
             x-transition:leave="transition ease-in duration-300"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0">
@@ -23,7 +23,7 @@
             <h3 class="fw-bold text-dark mb-0">
                 <i class="bi bi-clock-history text-success me-2"></i> سجل الدفعات للمشترك
             </h3>
-            
+
             @if($client)
                 <div class="mt-2 text-end">
                     <div class="d-inline-flex align-items-center bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-4 py-2">
@@ -48,12 +48,10 @@
         </div>
     </div>
 
-    
     <div class="card shadow-sm border-0 rounded-4 overflow-hidden flex-grow-1 d-flex flex-column mb-3" style="min-height: 0;">
         <div class="card-body p-4 d-flex flex-column flex-grow-1" style="min-height: 0;">
 
             @if($client)
-                <!-- Filters -->
                 <div class="flex-shrink-0 row g-3 mb-4">
                     <div class="col-md-4">
                         <label class="form-label fw-bold"><i class="bi bi-calendar3 me-1"></i> السنة</label>
@@ -79,7 +77,6 @@
                 </div>
 
                 @if($payments->count() > 0)
-                    <!-- Payments Table -->
                     <div class="table-responsive flex-grow-1 rounded-3 border" style="overflow-y: auto;">
                         <table class="table table-hover text-center align-middle mb-0">
                             <thead class="table-secondary" style="position: sticky; top: 0; z-index: 5;">
@@ -89,34 +86,59 @@
                                     <th>المبلغ المدفوع $</th>
                                     <th>الخصم $</th>
                                     <th>الرصيد بعد الدفعة $</th>
+                                    <th>الإجراءات</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white">
                                 @foreach($payments as $payment)
-                                    <tr>
+                                    @php
+                                        $isDeleted = $payment->trashed();
+                                        $canDelete = !$isDeleted && $payment->meter_reading_id === $this->latestCompletedReadingId;
+                                        $deletedTextClass = $isDeleted ? 'text-danger' : '';
+                                    @endphp
+                                    <tr class="{{ $isDeleted ? 'table-danger bg-danger bg-opacity-10' : '' }}">
                                         <td>
-                                            <div class="fw-bold">{{ $payment->paid_at->format('d-m-Y') }}</div>
-                                            <small class="text-secondary">{{ $payment->paid_at->format('H:i') }}</small>
+                                            <div class="fw-bold {{ $deletedTextClass }}">{{ $payment->paid_at->format('d-m-Y') }}</div>
+                                            <small class="{{ $isDeleted ? 'text-danger' : 'text-secondary' }}">{{ $payment->paid_at->format('H:i') }}</small>
+                                            @if($isDeleted)
+                                                <div class="small text-danger mt-1">
+                                                    <span>تاريخ الحذف: {{ $payment->deleted_at?->format('d-m-Y H:i') }}</span>
+                                                </div>
+                                            @endif
                                         </td>
                                         <td>
-                                            <span class="fw-bold">
+                                            <span class="fw-bold {{ $deletedTextClass }}">
                                                 {{ $payment->meterReading->reading_for_month->format('m-Y') }}
                                             </span>
                                         </td>
-                                        <td class="fw-bold text-success">
+                                        <td class="fw-bold {{ $isDeleted ? 'text-danger' : 'text-success' }}">
                                             {{ number_format($payment->amount, 2) }}
                                         </td>
                                         <td>
-                                                @if($payment->discount > 0)
-                                                    <span class="fw-bold text-info">
-                                                        {{ number_format($payment->discount, 2) }}
-                                                    </span>
-                                                @else
-                                                    <span class="text-muted small">---</span>
-                                                @endif
+                                            @if($payment->discount > 0)
+                                                <span class="fw-bold {{ $isDeleted ? 'text-danger' : 'text-info' }}">
+                                                    {{ number_format($payment->discount, 2) }}
+                                                </span>
+                                            @else
+                                                <span class="{{ $isDeleted ? 'text-danger small' : 'text-muted small' }}">---</span>
+                                            @endif
                                         </td>
-                                        <td class="fw-bold {{ $payment->remaining_after_payment <= 0 ? 'text-success' : 'text-danger' }}">
+                                        <td class="fw-bold {{ $isDeleted ? 'text-danger' : ($payment->remaining_after_payment <= 0 ? 'text-success' : 'text-danger') }}">
                                             {{ number_format($payment->remaining_after_payment, 2) }}
+                                        </td>
+                                        <td>
+                                            @if($canDelete)
+                                                <button
+                                                    wire:click="confirmDelete({{ $payment->id }})"
+                                                    class="btn btn-outline-danger btn-sm rounded-pill shadow-sm"
+                                                    title="حذف">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            @elseif($isDeleted)
+                                                <span class="text-danger small">تم الحذف</span>
+                                            @else
+                                                <span class="text-muted small">---</span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach

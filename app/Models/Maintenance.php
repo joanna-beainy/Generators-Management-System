@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Support\ArabicMonth;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Maintenance extends Model
 {
@@ -12,6 +13,7 @@ class Maintenance extends Model
 
     protected $fillable = [
         'client_id',
+        'applied_meter_reading_id',
         'amount',
         'description',
     ];
@@ -22,24 +24,20 @@ class Maintenance extends Model
         'updated_at' => 'datetime',
     ];
 
-    // Relationships
     public function client()
     {
         return $this->belongsTo(Client::class);
     }
 
-    // Accessors
-    public function getTargetMonthAttribute()
+    public function appliedMeterReading()
     {
-        // All maintenance added between the 1st and last day of a month belong to that month
-        return $this->created_at->copy()->startOfMonth();
+        return $this->belongsTo(MeterReading::class, 'applied_meter_reading_id');
     }
 
-    // Scopes
     public function scopeForMonth($query, Carbon $month)
     {
         return $query->whereYear('created_at', $month->year)
-                     ->whereMonth('created_at', $month->month);
+            ->whereMonth('created_at', $month->month);
     }
 
     public function scopeForClient($query, $clientId)
@@ -47,44 +45,51 @@ class Maintenance extends Model
         return $query->where('client_id', $clientId);
     }
 
-
-    
-    // Add maintenance and automatically update the matching meter reading.
     public static function addWithAutoHandling($clientId, $amount, $description = null)
     {
         $now = Carbon::now();
         $targetMonth = $now->copy()->startOfMonth();
+        $latestCompletedReading = MeterReading::latestCompletedForClient($clientId);
 
-        // Create maintenance record
         $maintenance = self::create([
             'client_id' => $clientId,
+            'applied_meter_reading_id' => $latestCompletedReading?->id,
             'amount' => $amount,
             'description' => $description,
         ]);
 
-        // Find the corresponding meter reading for this month
+        if ($latestCompletedReading) {
+            $latestCompletedReading->increment('maintenance_cost', $amount);
+            $latestCompletedReading->increment('remaining_amount', $amount);
+
+            return $maintenance;
+        }
+
         $reading = MeterReading::where('client_id', $clientId)
             ->whereDate('reading_for_month', $targetMonth)
             ->first();
 
-        // Update maintenance_cost and remaining_amount if reading exists
         if ($reading) {
             $reading->increment('maintenance_cost', $amount);
             $reading->increment('remaining_amount', $amount);
+            $maintenance->update([
+                'applied_meter_reading_id' => $reading->id,
+            ]);
         }
 
         return $maintenance;
     }
 
-
-    // Delete maintenance and reverse its effect on the meter reading.
     public function deleteWithAutoHandling()
     {
         $targetMonth = $this->created_at->copy()->startOfMonth();
+        $reading = $this->appliedMeterReading;
 
-        $reading = MeterReading::where('client_id', $this->client_id)
-            ->whereDate('reading_for_month', $targetMonth)
-            ->first();
+        if (!$reading) {
+            $reading = MeterReading::where('client_id', $this->client_id)
+                ->whereDate('reading_for_month', $targetMonth)
+                ->first();
+        }
 
         if ($reading) {
             $reading->decrement('maintenance_cost', $this->amount);
@@ -94,26 +99,8 @@ class Maintenance extends Model
         return $this->delete();
     }
 
-    // Helper / Display Functions
-
-    public function getArabicMonthName()
+    public function getArabicMonthNameAttribute(): string
     {
-        $months = [
-            1 => 'كانون الثاني', 2 => 'شباط', 3 => 'آذار', 4 => 'نيسان',
-            5 => 'أيار', 6 => 'حزيران', 7 => 'تموز', 8 => 'آب',
-            9 => 'أيلول', 10 => 'تشرين الأول', 11 => 'تشرين الثاني', 12 => 'كانون الأول',
-        ];
-
-        return $months[$this->created_at->month] . ' ' . $this->created_at->year;
-    }
-
-    public function getFormattedAmountAttribute()
-    {
-        return number_format($this->amount, 0);
-    }
-
-    public function belongsToUser($userId)
-    {
-        return $this->client && $this->client->user_id === $userId;
+        return ArabicMonth::label($this->created_at);
     }
 }
