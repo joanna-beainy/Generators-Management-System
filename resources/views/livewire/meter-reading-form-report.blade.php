@@ -10,7 +10,7 @@
             </p>
         </div>
         <div class="d-flex gap-2 text-end">
-            <button type="button" 
+            <button type="button"
                     class="btn btn-success rounded-pill shadow-sm px-4"
                     onclick="window.print()">
                 <i class="bi bi-printer me-1"></i> طباعة النموذج
@@ -21,13 +21,11 @@
         </div>
     </div>
 
-
-
     @if ($alertMessage)
         <div class="flex-shrink-0"
-            x-data="{ show: true }" 
-            x-show="show" 
-            x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)" 
+            x-data="{ show: true }"
+            x-show="show"
+            x-init="setTimeout(() => { show = false; $wire.set('alertMessage', null) }, 5000)"
             x-transition:leave="transition ease-in duration-300"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0">
@@ -55,15 +53,17 @@
                     <table class="table table-hover text-center align-middle mb-0" id="report-table">
                         <thead class="table-secondary print-table-header" style="position: sticky; top: 0; z-index: 1;">
                             <tr class="text-uppercase small fw-bold">
-                                <th style="width: 100px;">رقم المشترك</th>
+                                <th style="width: 230px;">ملاحظات</th>
+                                <th style="width: 100px;">الرقم</th>
                                 <th style="width: 250px;">اسم المشترك</th>
-                                <th>العداد السابق</th>
-                                <th>العداد الحالي</th>
+                                <th style="width: 120px;">العداد السابق</th>
+                                <th style="width: 120px;">العداد الحالي</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white">
                             @foreach($clients as $client)
                                 <tr>
+                                    <td></td>
                                     <td>{{ $client['id'] }}</td>
                                     <td>{{ $client['full_name'] }}</td>
                                     <td>{{ $client['previous_meter'] }}</td>
@@ -124,7 +124,6 @@
                 overflow: visible !important;
             }
 
-            /* Excel-like table style */
             table {
                 border: 1px solid #000 !important;
                 border-collapse: collapse !important;
@@ -155,7 +154,6 @@
                 min-height: 25px;
             }
 
-            /* Ensure proper page breaks */
             tr {
                 page-break-inside: avoid;
             }
@@ -169,14 +167,13 @@
             }
 
             .table-responsive {
-                /* ensure the scrolling context for sticky */
                 overflow: auto;
             }
 
             .table-responsive thead th {
                 position: sticky;
                 top: 0;
-                background: #e6e6e6; 
+                background: #e6e6e6;
                 z-index: 5;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             }

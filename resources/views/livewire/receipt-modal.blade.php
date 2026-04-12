@@ -131,7 +131,7 @@
                         )
                             <button type="button" onclick="window.printReceipts()" class="btn btn-success rounded-pill px-4 shadow-sm">
                                 <i class="bi bi-printer me-2"></i>
-                                {{ $mode === 'bulk' ? 'طباعة جميع الإيصالات' : 'طباعة الإيصال' }}
+                                {{ $mode === 'single' || ($mode === 'bulk' && count($receiptsData) === 1) ? 'طباعة الإيصال' : 'طباعة جميع الإيصالات' }}
                             </button>
                         @endif
                     </div>

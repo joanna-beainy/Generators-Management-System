@@ -2,15 +2,16 @@
 
 namespace App\Livewire;
 
-use Exception;
 use App\Models\Client;
-use Livewire\Component;
 use App\Models\Generator;
-use App\Models\MeterReading;
 use App\Models\MeterCategory;
+use App\Models\MeterReading;
+use App\Support\ArabicMonth;
+use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Auth\Access\AuthorizationException;
+use Livewire\Component;
 
 class ShowClients extends Component
 {
@@ -24,6 +25,10 @@ class ShowClients extends Component
     public $alertType = null;
 
     public $showEditModal = false;
+    public $showActivationReadingModal = false;
+    public $activationClientId = null;
+    public $activationPendingMonth = null;
+    public $activationPendingMonthLabel = null;
     public $editingClient;
     public $first_name;
     public $father_name;
@@ -50,20 +55,20 @@ class ShowClients extends Component
 
     protected $messages = [
         'first_name.required' => 'يرجى إدخال الاسم الأول.',
-        'first_name.min' => 'يجب أن يكون الاسم الأول مكون من حرفين على الأقل.',
-        'first_name.max' => 'الاسم الأول طويل جداً.',
-        'father_name.min' => 'يجب أن يكون اسم الأب مكون من حرفين على الأقل.',
-        'father_name.max' => 'اسم الأب طويل جداً.',
-        'last_name.min' => 'يجب أن يكون اسم العائلة مكون من حرفين على الأقل.',
-        'last_name.max' => 'اسم العائلة طويل جداً.',
-        'address.required' => 'يرجى إدخال العنوان',
-        'address.min' => 'يجب أن يكون العنوان مكون من 3 أحرف على الأقل.',
+        'first_name.min' => 'يجب أن يكون الاسم الأول مكوّنًا من حرفين على الأقل.',
+        'first_name.max' => 'الاسم الأول طويل جدًا.',
+        'father_name.min' => 'يجب أن يكون اسم الأب مكوّنًا من حرفين على الأقل.',
+        'father_name.max' => 'اسم الأب طويل جدًا.',
+        'last_name.min' => 'يجب أن يكون اسم العائلة مكوّنًا من حرفين على الأقل.',
+        'last_name.max' => 'اسم العائلة طويل جدًا.',
+        'address.required' => 'يرجى إدخال العنوان.',
+        'address.min' => 'يجب أن يكون العنوان مكوّنًا من 3 أحرف على الأقل.',
         'phone_number.regex' => 'رقم الهاتف غير صالح.',
         'generator_id.required' => 'يرجى اختيار المولد.',
         'generator_id.exists' => 'المولد المحدد غير صالح.',
         'meter_category_id.exists' => 'فئة العداد المحددة غير صالحة.',
         'initial_meter.required' => 'يرجى إدخال عداد بداية القراءة القادمة.',
-        'initial_meter.numeric' => 'عداد بداية القراءة القادمة يجب أن يكون رقمياً.',
+        'initial_meter.numeric' => 'عداد بداية القراءة القادمة يجب أن يكون رقميًا.',
         'initial_meter.min' => 'عداد بداية القراءة القادمة لا يمكن أن يكون أقل من صفر.',
     ];
 
@@ -179,16 +184,105 @@ class ShowClients extends Component
 
             $this->authorize('toggleActive', $client);
 
-            $client->is_active = !$client->is_active;
-            $client->save();
+            if ((bool) $client->is_active) {
+                MeterReading::deleteLatestPendingReadingForClient($client->id);
+                $client->is_active = false;
+                $client->save();
 
-            $this->setAlert('تم تغيير حالة المشترك.', 'success');
-            $this->loadClients();
+                $this->setAlert('تم تغيير حالة المشترك.', 'success');
+                $this->loadClients();
+
+                return;
+            }
+
+            $pendingMonth = MeterReading::latestPendingMonthForUser(Auth::id());
+
+            if ($pendingMonth && !$this->clientHasReadingForMonth($client, $pendingMonth)) {
+                $this->activationClientId = $client->id;
+                $this->activationPendingMonth = $pendingMonth->toDateString();
+                $this->activationPendingMonthLabel = ArabicMonth::label($pendingMonth);
+                $this->showActivationReadingModal = true;
+
+                return;
+            }
+
+            $this->activateClient($client, false);
         } catch (AuthorizationException $e) {
             $this->setAlert('ليس لديك صلاحية لتغيير حالة هذا المشترك', 'danger');
         } catch (Exception $e) {
             $this->setAlert('حدث خطأ أثناء تغيير حالة المشترك.', 'danger');
         }
+    }
+
+    public function confirmActivationWithReading()
+    {
+        $this->completeActivation(true);
+    }
+
+    public function confirmActivationWithoutReading()
+    {
+        $this->completeActivation(false);
+    }
+
+    public function closeActivationReadingModal()
+    {
+        $this->resetActivationReadingModal();
+    }
+
+    private function completeActivation(bool $createReading): void
+    {
+        try {
+            if (!$this->activationClientId) {
+                return;
+            }
+
+            $client = Client::forUser(Auth::id())
+                ->where('id', $this->activationClientId)
+                ->firstOrFail();
+
+            $this->authorize('toggleActive', $client);
+
+            $this->activateClient($client, $createReading);
+        } catch (AuthorizationException $e) {
+            $this->setAlert('ليس لديك صلاحية لتغيير حالة هذا المشترك', 'danger');
+        } catch (Exception $e) {
+            $this->setAlert('حدث خطأ أثناء تغيير حالة المشترك.', 'danger');
+        }
+    }
+
+    private function activateClient(Client $client, bool $createReading): void
+    {
+        $client->is_active = true;
+        $client->save();
+
+        if ($createReading && $this->activationPendingMonth) {
+            MeterReading::createPendingReadingForClientAndMonth(
+                $client,
+                \Illuminate\Support\Carbon::parse($this->activationPendingMonth)->startOfMonth()
+            );
+
+            $this->setAlert('تم تفعيل المشترك وإنشاء قراءة للشهر المفتوح.', 'success');
+        } else {
+            $this->setAlert('تم تغيير حالة المشترك.', 'success');
+        }
+
+        $this->resetActivationReadingModal();
+        $this->loadClients();
+    }
+
+    private function clientHasReadingForMonth(Client $client, $month): bool
+    {
+        return MeterReading::where('client_id', $client->id)
+            ->whereDate('reading_for_month', $month)
+            ->exists();
+    }
+
+    private function resetActivationReadingModal(): void
+    {
+        $this->showActivationReadingModal = false;
+        $this->activationClientId = null;
+        $this->activationPendingMonth = null;
+        $this->activationPendingMonthLabel = null;
     }
 
     public function editClient($id)

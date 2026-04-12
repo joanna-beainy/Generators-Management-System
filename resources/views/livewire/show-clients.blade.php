@@ -131,8 +131,9 @@
                                     <td>
                                         <div class="d-flex justify-content-center gap-3">
                                             <div class="form-check form-switch pt-1">
-                                                <input class="form-check-input" type="checkbox" role="switch" 
-                                                       wire:click="toggleActive({{ $client->id }})"
+                                                <input class="form-check-input" type="checkbox" role="switch"
+                                                       wire:key="client-toggle-{{ $client->id }}-{{ $client->is_active ? '1' : '0' }}"
+                                                       x-on:click.prevent="$wire.toggleActive({{ $client->id }})"
                                                        {{ $client->is_active ? 'checked' : '' }}
                                                        style="width: 2.5em; height: 1.25em; cursor: pointer;">
                                             </div>
@@ -147,6 +148,46 @@
                             @endforeach
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if($showActivationReadingModal)
+        <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);">
+            <div class="modal-dialog modal-dialog-centered" dir="rtl">
+                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                    <div class="modal-header bg-success bg-opacity-10 border-0 py-3">
+                        <h5 class="modal-title fw-bold text-success">
+                            <i class="bi bi-calendar-check me-2"></i>
+                            إنشاء قراءة للشهر المفتوح
+                        </h5>
+                        <button type="button" class="btn-close shadow-none" wire:click="closeActivationReadingModal"></button>
+                    </div>
+
+                    <div class="modal-body p-4 bg-white">
+                        <div class="text-center mb-4">
+                            <i class="bi bi-question-circle text-success display-5 mb-3 d-block"></i>
+                            <p class="text-muted mb-0">
+                                هل تريد إنشاء قراءة لهذا المشترك عن شهر
+                                <span class="fw-bold text-success">{{ $activationPendingMonthLabel }}</span>
+                                ؟
+                            </p>
+                        </div>
+
+                        <div class="bg-light rounded-4 p-3 border text-center small text-muted">
+                            عند اختيار "نعم" سيتم تفعيل المشترك وإنشاء قراءة معلقة له لهذا الشهر.
+                        </div>
+                    </div>
+
+                    <div class="modal-footer border-0 p-4 bg-light bg-opacity-50 justify-content-between">
+                        <button type="button" class="btn btn-outline-danger rounded-pill px-4" wire:click="confirmActivationWithoutReading">
+                            لا، فقط فعّل المشترك
+                        </button>
+                        <button type="button" class="btn btn-success rounded-pill px-4 shadow-sm" wire:click="confirmActivationWithReading">
+                            نعم، أنشئ القراءة
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
