@@ -27,7 +27,6 @@ npm-debug.log*
 # NativePHP & SQLite
 /nativephp/electron/dist
 /packages/*
-!/packages/php-bin
 *.sqlite
 *.sqlite-journal
 *.sqlite-shm
